@@ -70,7 +70,13 @@ export async function requestCode(
     prisma.loginCode.create({ data: { email, codeHash, expiresAt } }),
   ]);
 
-  await sendCode(email, code);
+  // Fire-and-forget: never block the login response on the mail server. The
+  // code is already stored above, so delivery is independent of the HTTP
+  // response — a slow or unreachable SMTP host must not hang the request. Any
+  // send failure is logged (visible in the host's logs) for diagnosis.
+  void sendCode(email, code).catch((err) => {
+    console.error(`[auth] Failed to send sign-in code to ${email}:`, err);
+  });
   return { ok: true };
 }
 

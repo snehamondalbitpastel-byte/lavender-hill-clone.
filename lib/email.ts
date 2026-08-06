@@ -24,6 +24,12 @@ const transporter =
         port,
         secure: port === 465, // 465 = implicit SSL; 587 = STARTTLS
         auth: { user, pass },
+        // Fail fast instead of hanging forever if the SMTP host is slow or
+        // unreachable (some cloud hosts throttle/block outbound mail ports).
+        // Without these, a stalled connection blocks the request indefinitely.
+        connectionTimeout: 10_000, // ms to establish the TCP connection
+        greetingTimeout: 10_000, // ms to wait for the server's 220 greeting
+        socketTimeout: 20_000, // ms of socket inactivity before giving up
       })
     : null;
 
