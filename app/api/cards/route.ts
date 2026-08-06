@@ -13,15 +13,32 @@ const parse = (c: CardRow) => ({
 //   GET /api/cards                 — every card (the shop grid).
 //   GET /api/cards?category=handle — only cards whose product is in that category.
 //   GET /api/cards?sale=true       — only on-sale cards.
+//   GET /api/cards?new=true        — only "New In" cards (product.isNew).
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
   const sale = searchParams.get("sale");
+  const newIn = searchParams.get("new");
 
   // Sale view — every on-sale card.
   if (sale === "true") {
     const cards = await prisma.card.findMany({
       where: { saveBadge: { not: null } },
+      orderBy: { order: "asc" },
+    });
+    return Response.json(cards.map(parse));
+  }
+
+  // New In view — only cards whose product is flagged "New In" (isNew), so the
+  // New In page reuses the shop grid+filter against just these products.
+  if (newIn === "true") {
+    const products = await prisma.product.findMany({
+      where: { isNew: true },
+      select: { slug: true },
+    });
+    const slugs = products.map((p) => p.slug);
+    const cards = await prisma.card.findMany({
+      where: { productSlug: { in: slugs } },
       orderBy: { order: "asc" },
     });
     return Response.json(cards.map(parse));

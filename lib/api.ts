@@ -123,6 +123,11 @@ export function getSaleCards(): Promise<Card[]> {
   return apiFetch<Card[]>("/cards?sale=true");
 }
 
+// New In collection — only the colour cards whose product is flagged "New In".
+export function getNewInCards(): Promise<Card[]> {
+  return apiFetch<Card[]>("/cards?new=true");
+}
+
 // A category node (nested via parentId).
 export type Category = {
   id: number;

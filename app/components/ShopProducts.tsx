@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useFetch } from "@/hooks/useFetch";
-import { getCards, getSaleCards, type Card } from "@/lib/api";
+import { getCards, getSaleCards, getNewInCards, type Card } from "@/lib/api";
 import ProductCard from "./ProductCard";
 import ProductCardSkeleton from "./ProductCardSkeleton";
 
@@ -69,12 +69,14 @@ function cardValues(c: Card, key: FilterKey): string[] {
 export default function ShopProducts({
   category,
   saleOnly = false,
-}: { category?: string; saleOnly?: boolean } = {}) {
-  // Sale page reuses this grid verbatim but fetches only the on-sale cards.
-  // Demo limits are enforced server-side in /api/cards (see TEMP DEMO there),
-  // so category views stay consistent with the shop grid.
+  newIn = false,
+}: { category?: string; saleOnly?: boolean; newIn?: boolean } = {}) {
+  // Sale + New In pages reuse this exact grid + filter, just fetching a
+  // different slice of cards (on-sale / new-in / a category). Same data-driven
+  // facets, live counts, and "Clear all" as the main shop — so every listing
+  // page filters identically.
   const { data, loading } = useFetch<Card[]>(() =>
-    saleOnly ? getSaleCards() : getCards(category)
+    newIn ? getNewInCards() : saleOnly ? getSaleCards() : getCards(category)
   );
   const [sort, setSort] = useState<SortKey>("featured");
   const [sortOpen, setSortOpen] = useState(false);

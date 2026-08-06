@@ -6,7 +6,7 @@ import FooterFeatures from "../components/FooterFeatures";
 import ScrollingText from "../components/ScrollingText";
 import Footer from "../components/Footer";
 import CollectionBanner from "../components/CollectionBanner";
-import NewInProducts from "../components/NewInProducts";
+import ShopProducts from "../components/ShopProducts";
 
 // Render per request (not frozen at build) so admin catalog changes appear
 // live in production — and so a cloud build needs no database present.
@@ -34,9 +34,10 @@ export default async function NewInPage() {
             reflect instantly. */}
         <CollectionBanner slug="new-in" categories={categories} />
 
-        {/* Second half — toolbar + product grid (4 sample products for now) */}
+        {/* Second half — toolbar + product grid. Reuses the shop's data-driven
+            filter (same facet counts + "Clear all"), scoped to New In items. */}
         <section className="pb-16 md:pb-24">
-          <NewInProducts />
+          <ShopProducts newIn />
         </section>
       </main>
       <FooterFeatures />
