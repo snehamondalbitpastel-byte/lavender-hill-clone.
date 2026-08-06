@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useFetch } from "@/hooks/useFetch";
 import { getCards, getSaleCards, getNewInCards, type Card } from "@/lib/api";
 import ProductCard from "./ProductCard";
@@ -78,6 +79,7 @@ export default function ShopProducts({
   const { data, loading } = useFetch<Card[]>(() =>
     newIn ? getNewInCards() : saleOnly ? getSaleCards() : getCards(category)
   );
+  const router = useRouter();
   const [sort, setSort] = useState<SortKey>("featured");
   const [sortOpen, setSortOpen] = useState(false);
   const [layout, setLayout] = useState<Layout>("compact");
@@ -360,21 +362,32 @@ export default function ShopProducts({
             ))}
           </div>
         ) : pageItems.length === 0 ? (
-          // Empty grid — always offer a "Clear all filters" reset so the shopper
-          // can recover, whether it's empty from active filters or an empty
-          // category/collection. Clicking it clears every selected filter.
-          <div className="py-16 text-center">
-            <p className="text-espresso/70">
-              {activeCount > 0 ? "No matching products found." : "No products found."}
-            </p>
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="mt-4 inline-flex items-center rounded-md border border-espresso px-5 py-2 text-sm text-espresso transition-colors hover:bg-espresso hover:text-cream"
-            >
-              Clear all filters
-            </button>
-          </div>
+          activeCount > 0 ? (
+            // Empty because of active filters → reset the filter selections.
+            <div className="py-16 text-center">
+              <p className="text-espresso/70">No matching products found.</p>
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="mt-4 inline-flex items-center rounded-md border border-espresso px-5 py-2 text-sm text-espresso transition-colors hover:bg-espresso hover:text-cream"
+              >
+                Clear all filters
+              </button>
+            </div>
+          ) : (
+            // Empty category/collection (no products here at all) → "Clear all"
+            // takes the shopper back to the previous page where results showed.
+            <div className="py-16 text-center">
+              <p className="text-espresso/70">No products found.</p>
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="mt-4 inline-flex items-center rounded-md border border-espresso px-5 py-2 text-sm text-espresso transition-colors hover:bg-espresso hover:text-cream"
+              >
+                Clear all
+              </button>
+            </div>
+          )
         ) : (
           <div className={`grid ${GRID[layout]} gap-x-4 gap-y-10 md:gap-x-6`}>
             {displayItems.map((p) => (
