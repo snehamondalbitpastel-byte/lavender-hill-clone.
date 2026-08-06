@@ -360,23 +360,21 @@ export default function ShopProducts({
             ))}
           </div>
         ) : pageItems.length === 0 ? (
-          activeCount > 0 ? (
-            // Empty because of active filters → clear, prominent message + reset.
-            <div className="py-16 text-center">
-              <p className="text-espresso/70">No matching products found.</p>
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="mt-4 inline-flex items-center rounded-md border border-espresso px-5 py-2 text-sm text-espresso transition-colors hover:bg-espresso hover:text-cream"
-              >
-                Clear all filters
-              </button>
-            </div>
-          ) : (
-            // Empty for another reason (e.g. this category has no products) —
-            // no filters to clear, so just say so.
-            <p className="text-center text-espresso/50 py-16">No products found.</p>
-          )
+          // Empty grid — always offer a "Clear all filters" reset so the shopper
+          // can recover, whether it's empty from active filters or an empty
+          // category/collection. Clicking it clears every selected filter.
+          <div className="py-16 text-center">
+            <p className="text-espresso/70">
+              {activeCount > 0 ? "No matching products found." : "No products found."}
+            </p>
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="mt-4 inline-flex items-center rounded-md border border-espresso px-5 py-2 text-sm text-espresso transition-colors hover:bg-espresso hover:text-cream"
+            >
+              Clear all filters
+            </button>
+          </div>
         ) : (
           <div className={`grid ${GRID[layout]} gap-x-4 gap-y-10 md:gap-x-6`}>
             {displayItems.map((p) => (

@@ -255,23 +255,11 @@ export default function ProductDetail({ id }: { id: string }) {
 
   async function addToCart() {
     if (!product || checking) return;
-    // Require login to add to cart — the session cookie is httpOnly, so ask the
-    // server. If not signed in, show the login-required popup instead of adding.
-    setChecking(true);
-    const me = await fetch("/api/auth/me")
-      .then((r) => r.json())
-      .catch(() => ({ loggedIn: false }));
-    setChecking(false);
-    if (!me.loggedIn) {
-      setLoginGate(true);
-      return;
-    }
-    // Use the RESOLVED selection (a default colour/size is always pre-selected).
+    // Build the exact line being added (resolved colour/size + chosen quantity).
     const chosenColour = colour || product.colours[0]?.name || "";
     const chosenSize = size || product.sizes[0] || "";
-    setWarn("");
     const col = product.colours.find((c) => c.name === chosenColour);
-    cart.add({
+    const payload = {
       productId: product.id,
       slug: product.slug,
       title: product.title,
@@ -283,7 +271,23 @@ export default function ProductDetail({ id }: { id: string }) {
       badge: product.badge,
       stock: variantStockOf(col, chosenSize), // the SELECTED (colour, size) variant's stock
       qty,
-    });
+    };
+    // Require login to add — the session cookie is httpOnly, so ask the server.
+    setChecking(true);
+    const me = await fetch("/api/auth/me")
+      .then((r) => r.json())
+      .catch(() => ({ loggedIn: false }));
+    setChecking(false);
+    if (!me.loggedIn) {
+      // Park the intended add (incl. the chosen quantity) so it completes
+      // automatically after sign-in — the cart then shows the right count (e.g.
+      // 4), not a reset 1. CartProvider replays it on return (see PENDING_KEY).
+      try { localStorage.setItem("lh_pending_add", JSON.stringify(payload)); } catch { /* ignore */ }
+      setLoginGate(true);
+      return;
+    }
+    setWarn("");
+    cart.add(payload);
   }
 
   // Reset selections + gallery when the product changes. Default the size to the

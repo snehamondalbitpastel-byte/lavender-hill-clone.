@@ -1,5 +1,10 @@
+"use client";
+
 import Image from "next/image";
-import { type Product, type Card } from "@/lib/api";
+import { useState } from "react";
+import { getProduct, type Product, type Card } from "@/lib/api";
+import { useCart, parseRs } from "./CartProvider";
+import { variantStockOf } from "@/lib/inventory";
 
 // Shared product card — used by the homepage "Bestsellers" and the shop page.
 
@@ -63,10 +68,46 @@ function Rating({ rating, reviews }: { rating: number; reviews: number }) {
 // Accepts a Product (homepage bestsellers) or a Card (shop grid, one per colour)
 // — both share the fields the card renders.
 export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | Card; sizeHint?: string; colourHint?: string }) {
+  const cart = useCart();
+  const [busy, setBusy] = useState(false);
+  const slug = "productSlug" in p ? p.productSlug : p.slug;
+
+  // Quick-add from the card's "+" icon. Cards don't carry productId/stock, so we
+  // resolve the full product, pick the card's colour + first size + qty 1, then
+  // add via the login-gated requestAdd — which shows the "sign in first" prompt
+  // for guests and opens the cart drawer once added.
+  async function quickAdd() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const full = await getProduct(slug);
+      const wantColour = colourHint || full.colours[0]?.name || "";
+      const col = full.colours.find((c) => c.name === wantColour) || full.colours[0];
+      const wantSize = sizeHint && full.sizes.includes(sizeHint) ? sizeHint : full.sizes[0] || "";
+      await cart.requestAdd({
+        productId: full.id,
+        slug: full.slug,
+        title: full.title,
+        colour: col?.name || "",
+        size: wantSize,
+        image: col?.image || full.image,
+        price: parseRs(full.price),
+        compareAt: full.compareAtPrice ? parseRs(full.compareAtPrice) : null,
+        badge: full.badge,
+        stock: variantStockOf(col, wantSize),
+        qty: 1,
+      });
+    } catch {
+      /* product fetch failed — leave the cart untouched */
+    } finally {
+      setBusy(false);
+    }
+  }
+
   // Click-through to the product detail page (Card → productSlug, Product → slug).
   // Carry the card's own colour (each shop card is one colour) and any filtered
   // size so the detail page opens on that colour/size instead of the first.
-  const base = `/products/${"productSlug" in p ? p.productSlug : p.slug}`;
+  const base = `/products/${slug}`;
   const params = new URLSearchParams();
   if (colourHint) params.set("colour", colourHint);
   if (sizeHint) params.set("size", sizeHint);
@@ -110,8 +151,10 @@ export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | 
            no border-radius). Fades in on hover. */}
         <button
           type="button"
-          aria-label="Choose options"
-          className="absolute bottom-2 right-2 z-[1] p-2.5 bg-cream text-espresso flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-espresso hover:text-cream"
+          onClick={quickAdd}
+          disabled={busy}
+          aria-label="Add to cart"
+          className="absolute bottom-2 right-2 z-[1] p-2.5 bg-cream text-espresso flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-espresso hover:text-cream disabled:cursor-wait"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <path d="M6 0v12M0 6h12" stroke="currentColor" strokeWidth="1.5" />
