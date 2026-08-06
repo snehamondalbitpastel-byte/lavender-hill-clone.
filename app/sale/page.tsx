@@ -7,6 +7,10 @@ import ScrollingText from "../components/ScrollingText";
 import Footer from "../components/Footer";
 import ShopProducts from "../components/ShopProducts";
 
+// Render per request (not frozen at build) so admin catalog changes appear
+// live in production — and so a cloud build needs no database present.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Sale | Lavender Hill",
   description:
