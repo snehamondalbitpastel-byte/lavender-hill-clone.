@@ -70,13 +70,16 @@ export async function requestCode(
     prisma.loginCode.create({ data: { email, codeHash, expiresAt } }),
   ]);
 
-  // Fire-and-forget: never block the login response on the mail server. The
-  // code is already stored above, so delivery is independent of the HTTP
-  // response — a slow or unreachable SMTP host must not hang the request. Any
-  // send failure is logged (visible in the host's logs) for diagnosis.
-  void sendCode(email, code).catch((err) => {
+  // Actually wait for the code email to send (it's a one-time login code — it
+  // must go out, not fire-and-forget, which can be cut off when the request
+  // ends). Failures are caught so a mail problem never crashes login: the code
+  // is already stored and the user can hit "Resend". The transport's timeouts
+  // (see lib/email.ts) guarantee this can never hang the request forever.
+  try {
+    await sendCode(email, code);
+  } catch (err) {
     console.error(`[auth] Failed to send sign-in code to ${email}:`, err);
-  });
+  }
   return { ok: true };
 }
 
