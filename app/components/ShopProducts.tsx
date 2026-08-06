@@ -234,6 +234,22 @@ export default function ShopProducts({
   );
   const pageItems = filtered.filter((c) => pageSlugs.has(c.productSlug));
 
+  // Show ONE card per PRODUCT (the shop lists products, not every colour). Use the
+  // card that matches the active colour filter when set, else the product's first
+  // colour; and strip the colour prefix so the title reads as the product name.
+  const displayItems = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Card[] = [];
+    for (const c of pageItems) {
+      if (seen.has(c.productSlug)) continue;
+      seen.add(c.productSlug);
+      const title =
+        c.colour && c.title.startsWith(`${c.colour} `) ? c.title.slice(c.colour.length + 1) : c.title;
+      out.push({ ...c, title });
+    }
+    return out;
+  }, [pageItems]);
+
   function goToPage(n: number) {
     setPage(n);
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -361,11 +377,12 @@ export default function ShopProducts({
           )
         ) : (
           <div className={`grid ${GRID[layout]} gap-x-4 gap-y-10 md:gap-x-6`}>
-            {pageItems.map((p) => (
+            {displayItems.map((p) => (
               <ProductCard
                 key={p.id}
                 p={p}
-                // Each shop card IS one colour → open the detail page on that colour.
+                // Open the detail page on the shown colour (the filtered colour when
+                // a colour filter is active, else the product's first colour).
                 colourHint={p.colour ?? undefined}
                 // Carry the size the shopper filtered by (the first selected size
                 // this card actually offers) into the product link.

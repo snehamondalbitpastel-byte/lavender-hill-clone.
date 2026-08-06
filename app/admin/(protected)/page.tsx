@@ -2,19 +2,27 @@ import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { productPricing } from "@/lib/cards";
 
 export default async function AdminDashboard() {
   const session = await requireAdmin();
 
-  const [products, onSale, newIn, customers, orderCount, revenueAgg, recent] = await Promise.all([
+  const [products, saleRows, newIn, customers, orderCount, revenueAgg, recent] = await Promise.all([
     prisma.product.count(),
-    prisma.product.count({ where: { compareAtPrice: { not: null } } }),
+    // Pricing fields for every product, so "on sale" is computed the SAME way as
+    // the storefront (productPricing → saveBadge covers compare-at AND per-product
+    // discounts — a compareAtPrice-only count misses discount-based sales).
+    prisma.product.findMany({ select: { price: true, compareAtPrice: true, discountType: true, discountValue: true } }),
     prisma.product.count({ where: { isNew: true } }),
     prisma.customer.count(),
     prisma.order.count(),
     prisma.order.aggregate({ _sum: { total: true } }),
     prisma.product.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
   ]);
+
+  const onSale = saleRows.filter(
+    (p) => !!productPricing(p.price, p.compareAtPrice, p.discountType, p.discountValue).saveBadge
+  ).length;
 
   const name = session.email.split("@")[0];
   const revenue = revenueAgg._sum.total ?? 0;
