@@ -1,13 +1,13 @@
-// Prisma schema — local SQLite for development.
-// To deploy on Neon (Postgres) later: change provider to "postgresql"
-// and DATABASE_URL to the Neon connection string. The models stay the same.
+// Prisma schema — Postgres (Neon) for both local development and production
+// (Vercel). DATABASE_URL holds the Neon connection string. The models below are
+// unchanged from the original SQLite version — only the provider differs.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
