@@ -33,16 +33,45 @@ const transporter =
       })
     : null;
 
-export async function sendCode(email: string, code: string): Promise<void> {
-  if (!transporter) {
-    // Dev fallback — no SMTP configured yet.
-    // eslint-disable-next-line no-console
-    console.log(
-      `\n✉  [auth] Sign-in code for ${email}: ${code}  (expires in 10 min)\n`
-    );
+// HTTPS email via Resend — used where outbound SMTP is blocked (e.g. Railway,
+// Render, most serverless hosts). Preferred whenever RESEND_API_KEY is set.
+// The From must be a Resend-verified domain, or the shared onboarding@resend.dev
+// sender for quick setups (override with RESEND_FROM).
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const RESEND_FROM = process.env.RESEND_FROM || "Lavender Hill <onboarding@resend.dev>";
+
+// One delivery path for every email: Resend (HTTPS) if configured, else SMTP,
+// else a dev-console fallback so flows stay testable without any mail creds.
+// Resend is called over its plain HTTPS API (no SDK) so delivery never depends
+// on an SMTP port — which hosts like Railway block.
+async function deliver(msg: { to: string; subject: string; text: string; html: string }): Promise<void> {
+  if (RESEND_API_KEY) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: RESEND_FROM,
+        to: msg.to,
+        subject: msg.subject,
+        text: msg.text,
+        html: msg.html,
+      }),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw new Error(`Resend send failed (${res.status}): ${detail}`);
+    }
     return;
   }
+  if (transporter) {
+    await transporter.sendMail({ from: FROM, to: msg.to, subject: msg.subject, text: msg.text, html: msg.html });
+    return;
+  }
+  // eslint-disable-next-line no-console
+  console.log(`\n✉  [email:dev] To ${msg.to} — ${msg.subject}\n`);
+}
 
+export async function sendCode(email: string, code: string): Promise<void> {
   // Mirrors the live Lavender Hill verification email: centred logo, big spaced
   // code, single-use note, footer with policy links.
   const html = `
@@ -65,8 +94,7 @@ export async function sendCode(email: string, code: string): Promise<void> {
     </div>
   </div>`;
 
-  await transporter.sendMail({
-    from: FROM,
+  await deliver({
     to: email,
     subject: `${code} is your code`,
     text: `Your Lavender Hill verification code is ${code}. This code can only be used once. It expires in 10 minutes.`,
@@ -172,13 +200,7 @@ function composeOrderMail(mail: OrderMail): { subject: string; heading: string; 
 
 export async function sendOrderEmail(to: string, mail: OrderMail): Promise<void> {
   const { subject, heading, body } = composeOrderMail(mail);
-  if (!transporter) {
-    // eslint-disable-next-line no-console
-    console.log(`\n✉  [order] To ${to} — ${subject}\n${body.replace(/<[^>]+>/g, "")}\n`);
-    return;
-  }
-  await transporter.sendMail({
-    from: FROM,
+  await deliver({
     to,
     subject,
     text: `${heading}\n\n${body.replace(/<[^>]+>/g, "")}`,
@@ -200,13 +222,7 @@ export async function sendBackInStockEmail(
     ? `<p style="margin-top:20px;"><a href="${opts.url}" style="color:#5b6b86;">Shop it now &rarr;</a></p>`
     : "";
   const body = `<p>Good news — <strong>${what}</strong> is available again. Popular pieces sell fast, so grab yours before it's gone.</p>${link}`;
-  if (!transporter) {
-    // eslint-disable-next-line no-console
-    console.log(`\n✉  [stock] To ${to} — ${subject}\n`);
-    return;
-  }
-  await transporter.sendMail({
-    from: FROM,
+  await deliver({
     to,
     subject,
     text: `${heading}\n\n${body.replace(/<[^>]+>/g, "")}`,
