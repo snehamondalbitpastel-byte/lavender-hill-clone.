@@ -1,0 +1,341 @@
+// Prisma schema — local SQLite for development.
+// To deploy on Neon (Postgres) later: change provider to "postgresql"
+// and DATABASE_URL to the Neon connection string. The models stay the same.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Admin accounts. Only the password HASH is stored (bcrypt) — never plaintext.
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+}
+
+// Storefront customers — passwordless (email OTP). Separate from the admin
+// `User` above. The account is created on the first successful code verify.
+model Customer {
+  id               Int       @id @default(autoincrement())
+  email            String    @unique
+  name             String?
+  marketingConsent Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  addresses        Address[]
+  orders           Order[]
+}
+
+// Saved shipping/billing addresses for a customer (managed on /profile).
+model Address {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  country    String
+  firstName  String   @default("")
+  lastName   String   @default("")
+  company    String   @default("")
+  address1   String
+  address2   String   @default("")
+  city       String   @default("")
+  state      String   @default("")
+  postcode   String   @default("")
+  phone      String   @default("")
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
+}
+
+// Placed orders. Prices are RE-COMPUTED server-side at checkout (never trusted
+// from the client cart). Line items are stored as a JSON snapshot.
+model Order {
+  id          Int       @id @default(autoincrement())
+  orderNumber String    @unique
+  customerId  Int?
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  email       String
+  // Delivery address (snapshot at order time)
+  country     String    @default("")
+  firstName   String    @default("")
+  lastName    String    @default("")
+  company     String    @default("")
+  address1    String    @default("")
+  address2    String    @default("")
+  city        String    @default("")
+  state       String    @default("")
+  postcode    String    @default("")
+  phone       String    @default("")
+  // Items + money (amounts in rupees)
+  items       String // JSON: [{ productId, title, colour, size, image, price, compareAt, qty, lineTotal, bundleDiscount, badge }]
+  subtotal    Float
+  discount    Float     @default(0)
+  shipping    Float     @default(0)
+  total       Float
+  currency    String    @default("INR")
+  // High-level legacy field (kept for back-compat). The real state now lives in
+  // the two axes below — `paymentStatus` (money) and `fulfillmentStatus` (goods).
+  status      String    @default("paid") // paid | pending | failed
+  paymentRef  String    @default("") // Stripe PaymentIntent id, or a mock ref
+  paymentBrand String   @default("") // card brand from Stripe (e.g. "visa"), if paid by card
+  paymentLast4 String   @default("") // last 4 digits of the card, for display ("•••• 4242")
+  note        String    @default("")
+  // --- Order lifecycle: two independent "lives" + return tracking ------------
+  // Money life:  paid → partially_refunded → refunded  (also pending | failed)
+  paymentStatus     String    @default("paid")
+  // Goods life:  unfulfilled → processing → packed → shipped → delivered
+  //              (or cancelled before it ships)
+  fulfillmentStatus String    @default("unfulfilled")
+  trackingCarrier   String    @default("")
+  trackingNumber    String    @default("")
+  refundedAmount    Float     @default(0) // total rupees refunded so far (≤ total)
+  discountCode      String    @default("") // coupon code applied at checkout, if any
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  cancelledAt       DateTime?
+  events            OrderEvent[]
+  returns           Return[]
+  createdAt   DateTime  @default(now())
+
+  @@index([customerId])
+}
+
+// Immutable activity log for an order — the admin timeline / audit trail. Every
+// status change, refund, and return action appends one row. Never edited or
+// deleted (history is a fact), so the order's whole story is reconstructable.
+model OrderEvent {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type      String // placed | confirmed | processing | packed | shipped | delivered | cancelled | refunded | return_requested | return_approved | return_rejected | return_initiated | return_received | note
+  message   String   @default("") // human-readable line shown in the timeline
+  actor     String   @default("system") // system | admin | customer
+  meta      String   @default("{}") // JSON extras (tracking no., refund amount, …)
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+}
+
+// Discount / coupon codes applied at checkout. Conditions are validated
+// server-side in computeOrder() so a tampered client can never fake a discount.
+model DiscountCode {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique // stored UPPERCASE; matched case-insensitively
+  type        String    @default("percent") // percent | fixed
+  value       Float // percent: 10 = 10% off · fixed: 500 = ₹500 off
+  minSubtotal Float     @default(0) // minimum order subtotal to qualify
+  maxDiscount Float? // cap on a percent discount (₹); null = no cap
+  usageLimit  Int? // max total redemptions; null = unlimited
+  usageCount  Int       @default(0) // incremented atomically on each successful order
+  startsAt    DateTime? // valid-from (null = already active)
+  endsAt      DateTime? // expiry (null = never expires)
+  active      Boolean   @default(true) // admin on/off switch
+  showInBanner Boolean  @default(false) // headline this code in the storefront promo bar
+  oncePerCustomer Boolean @default(true) // if true, each customer may redeem this code only once (anti-abuse)
+  createdAt   DateTime  @default(now())
+}
+
+// Back-in-stock requests. A shopper subscribes to a product + colour that's out
+// of stock; when the admin restocks that colour (stock 0 → >0) we email them once
+// and flip `notified`. Kept minimal so guests can subscribe with just an email.
+model StockNotification {
+  id        Int      @id @default(autoincrement())
+  email     String
+  productId Int
+  colour    String   @default("") // the specific colour they want (matches colourData name)
+  size      String   @default("") // the specific size they want ("" = product has no sizes)
+  notified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([productId, notified])
+}
+
+// A return request against a delivered order. Drives its own state machine:
+// requested → approved → initiated → received → refunded  (or → rejected).
+// The refund at the end reuses the order's payment life.
+model Return {
+  id           Int      @id @default(autoincrement())
+  returnNumber String   @unique
+  orderId      Int
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId   Int? // who requested it (nullable so a deleted customer keeps history)
+  status       String   @default("requested") // requested | approved | rejected | initiated | received | refunded | cancelled
+  reason       String   @default("") // "<code>: <comment>" e.g. "Damaged: arrived torn"
+  items        String   @default("[]") // JSON snapshot: [{ index, title, colour, size, qty, price }]
+  images       String   @default("[]") // JSON array of proof image URLs (customer upload)
+  refundAmount Float    @default(0) // rupees to refund for these items (before any restocking fee)
+  refundRef    String   @default("") // Stripe refund id, or a mock ref
+  adminNote    String   @default("") // shown to the customer on reject (the reason); internal notes go to the timeline
+  returnCarrier        String  @default("") // return shipping carrier (mock label)
+  returnTrackingNumber String  @default("") // return AWB (mock label)
+  restockingFee Float   @default(0) // deducted from the refund at resolution
+  restocked    Boolean  @default(false) // admin's restock decision (recorded; no live inventory yet)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([customerId])
+}
+
+// One-time login codes. We store only a bcrypt HASH of the 6-digit code, with a
+// short expiry + an attempts counter. Old codes for an email are replaced on
+// each new request, and the row is deleted on successful verify (single-use).
+model LoginCode {
+  id        Int      @id @default(autoincrement())
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+// Products (full catalogue). The admin edits these; the shop `Card` rows are
+// regenerated from them (one card per colour). Membership on pages is driven by
+// flags: `bestseller` (Home), `isNew` (New In), `salePrice` set (Sale).
+model Product {
+  id          Int      @id @default(autoincrement())
+  title       String
+  slug        String   @unique
+  description String   @default("")
+  category    String   @default("") // handle: t-shirts | loungewear | socks | accessories | toiletries
+  productType String
+  price       String // the normal (list) price shown on the card
+  compareAtPrice String? // original price; if higher than `price` → On Sale + "Save Rs X"
+  // Per-product discount (an automatic markdown ON `price`). "" = none. When set,
+  // the store sells at `price − discount`, shows the original struck through, and
+  // a "Save Rs X" badge — see productPricing() in lib/cards.ts (single source of
+  // truth used by the shop grid AND checkout). Fully reversible: clear it to end.
+  discountType  String @default("") // "" (none) | percent | fixed
+  discountValue Float  @default(0)  // percent: 20 = 20% off · fixed: 500 = ₹500 off
+  image       String
+  hover       String
+  rating      Float    @default(0)
+  reviews     Int      @default(0)
+  stock       Int? // units in stock; null = not tracked (unlimited). Decremented on order, restored on restocked return.
+  badge       String?
+  // SQLite can't store arrays/objects, so lists are JSON strings.
+  colors      String // JSON array of hex swatches
+  sizes       String // JSON array of size labels
+  // JSON array of { name, hex, image, hover } — the source for the shop cards.
+  colourData  String   @default("[]")
+  // Rich product-detail content (JSON object), all admin-editable per product:
+  // { materialMatters, accordions, keyFeatures, whyYouLoveIt, stylingTips,
+  //   behindTheSeams }. See ProductContent in lib/products.ts.
+  content     String   @default("{}")
+  order       Int      @default(0) // position in the shop grid
+  bestseller  Boolean  @default(false) // Home bestsellers
+  isNew       Boolean  @default(false) // New In page
+  createdAt   DateTime @default(now())
+}
+
+// Shop grid cards — the live "Variable Products" app shows ONE CARD PER COLOUR,
+// so each product expands into several cards (its own image, hover, price, title).
+// `order` preserves the exact grid sequence.
+model Card {
+  id          Int    @id @default(autoincrement())
+  order       Int    @default(0)
+  productSlug String
+  colour      String?
+  title       String
+  price       String
+  image       String
+  hover       String
+  rating      Float
+  reviews     Int
+  badge       String? // promo badge, e.g. "Buy 3+, Save 15%"
+  saveBadge   String? // on-sale badge, e.g. "Save Rs2,600.00" (from compare_at_price)
+  swatch      String  @default("") // this card's own colour hex (for the filter swatch)
+  colors      String // JSON array of hex swatches (all colours of the product)
+  productType String
+  sizes       String // JSON array of size labels
+  bestseller  Boolean @default(false)
+}
+
+// Product categories — a nested tree (parentId → self). Products reference a
+// category by its `handle`. Managed in the admin so categories aren't hardcoded.
+model Category {
+  id          Int        @id @default(autoincrement())
+  handle      String     @unique
+  label       String // short name shown in menus / tags
+  heading     String     @default("") // banner title (falls back to label)
+  description String     @default("") // banner description shown on the category page
+  order       Int        @default(0)
+  page        String     @default("shop") // listing page this category shows on: shop | new-in | sale
+  parentId    Int?
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryTree")
+}
+
+// Shop by category (home-page featured tiles)
+model Collection {
+  id    Int    @id @default(autoincrement())
+  title String
+  href  String
+  image String
+  order Int    @default(0)
+}
+
+// Behind The Brand (a single content block + its tiles as a JSON string)
+model BrandContent {
+  id          Int    @id @default(autoincrement())
+  title       String
+  description String
+  videoSrc    String
+  videoPoster String
+  // JSON array of { img, title, href|null }
+  tiles       String
+}
+
+// As Styled By You (shop-the-look carousel)
+model Look {
+  id            Int    @id @default(autoincrement())
+  look          String
+  hotspotTop    String
+  hotspotLeft   String
+  name          String
+  price         String
+  productImg    String
+  productImgAlt String
+  colors        String // JSON array string
+  href          String
+  order         Int    @default(0)
+}
+
+// Shop mega-menu — one column (heading link) with its sub-links.
+model MenuGroup {
+  id    Int        @id @default(autoincrement())
+  title String
+  href  String
+  order Int        @default(0)
+  links MenuLink[]
+}
+
+model MenuLink {
+  id      Int       @id @default(autoincrement())
+  label   String
+  href    String
+  order   Int       @default(0)
+  group   MenuGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId Int
+}
+
+// Collection / landing-page banner (the "first half" of a listing page:
+// breadcrumb + heading + description + category links). Keyed by `slug`
+// so pages like "new-in", "sale", etc. all share one model.
+model CollectionPage {
+  id          Int    @id @default(autoincrement())
+  slug        String @unique
+  title       String
+  description String
+  breadcrumbs String // JSON array of { label, href }
+  links       String // JSON array of { label, href }
+}

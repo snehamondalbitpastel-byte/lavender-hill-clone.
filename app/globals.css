@@ -1,26 +1,484 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  ============================================================
+  Lavender Hill — Design Tokens
+  Extracted directly from the live site's CSS variables.
+  (Shopify "Prestige" theme. Colors were stored as "R G B"
+   and converted to hex below.)
+  ============================================================
+*/
+@theme {
+  /* Brand colors */
+  --color-espresso: #3a2f22; /* main text / dark sections (58 47 34) */
+  --color-cream: #f7f4f0; /* main background          (247 244 240) */
+  --color-beige: #ede7de; /* alt background           (237 231 222) */
+  --color-plum: #533a59; /* sale / accent            (83 58 89)   */
+  --color-taupe: #8f7060; /* badge                    (143 112 96) */
+  --color-line: #dbd6d1; /* borders                  (219 214 209) */
+
+  /* Soft shadows from the theme */
+  --shadow-soft: 0 5px 15px rgb(0 0 0 / 0.05);
+  --shadow-soft-lg: 0 5px 30px rgb(0 0 0 / 0.05);
 }
 
+/* Fonts are injected on <html> by next/font — inline so the
+   utilities resolve to the runtime CSS variables. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-raleway), sans-serif;
+  --font-body: var(--font-tenor), sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    font-family: var(--font-body);
+    letter-spacing: 0.03em; /* --text-letter-spacing */
+    line-height: 1.65;
+  }
+
+  /* Headings: Raleway Light (300), UPPERCASE — matches the LH_MAY_2026 overrides.
+     Per-level letter-spacing: h1 .22em, h2 .2em, h3 .18em, h4 .14em. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 300;
+    line-height: 1.25;
+  }
+  h1 {
+    letter-spacing: 0.22em;
+  }
+  h2 {
+    letter-spacing: 0.2em;
+  }
+  h3 {
+    letter-spacing: 0.18em;
+  }
+  h4 {
+    letter-spacing: 0.14em;
+  }
+  h6 {
+    line-height: 1.7;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Centered content container — mirrors the theme's max-widths + gutters */
+  .container-lh {
+    width: 100%;
+    max-width: 85rem; /* --container-xl-max-width (1360px) */
+    margin-inline: auto;
+    padding-inline: 1.25rem; /* gutter: 20px mobile ... */
+  }
+  @media (min-width: 700px) {
+    .container-lh {
+      padding-inline: 2rem;
+    }
+  }
+  @media (min-width: 1000px) {
+    .container-lh {
+      padding-inline: 3rem;
+    }
+  }
+
+  /* Primary button — sharp corners, uppercase, wide tracking (border-radius: 0).
+
+     Hover animation is verbatim from the live theme's `.button`: a two-layer
+     background-gradient "fill-wipe". Layer 1 is a solid fill (--btn-bg);
+     layer 2 is transparent. At rest the solid layer is 101% wide (button looks
+     filled); on hover its width animates to 0 while the transparent layer grows
+     — so the fill wipes away to reveal an outline, and the text recolours to
+     --btn-bg. background-position uses step-end (snaps at the end) to anchor the
+     wipe direction, exactly like Prestige's --transform-origin-start/end.
+     Per-variant colours are set via the --btn-* custom properties below. */
+  .btn-lh {
+    --btn-bg: var(--color-espresso);
+    --btn-text: var(--color-cream);
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    font-family: var(--font-heading);
+    font-weight: 300;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 0.8125rem;
+    padding: 0.9rem 2.25rem;
+    border: 1px solid var(--btn-bg);
+    border-radius: 0;
+    cursor: pointer;
+    color: var(--btn-text);
+
+    background-color: transparent;
+    background-image: linear-gradient(var(--btn-bg), var(--btn-bg)),
+      linear-gradient(transparent, transparent);
+    background-size: 101% 101%, 0 101%;
+    background-position: right; /* --transform-origin-end */
+    background-repeat: no-repeat;
+    transition: background-size 0.45s cubic-bezier(0.785, 0.135, 0.15, 0.86),
+      background-position 0.45s step-end,
+      color 0.45s cubic-bezier(0.785, 0.135, 0.15, 0.86),
+      border-color 0.45s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+  }
+  .btn-lh:hover {
+    color: var(--btn-bg);
+    border-color: var(--btn-bg);
+    background-size: 0 101%, 101% 101%;
+    background-position: left; /* --transform-origin-start */
+  }
+
+  /* Ghost variant for dark backgrounds (e.g. over hero image) */
+  .btn-lh--light {
+    --btn-bg: var(--color-cream);
+    --btn-text: var(--color-espresso);
+  }
+
+  /* Taupe variant — matches the hero banner button on the live site
+     (--button-background: 143 112 96; --button-text-color: 255 255 255) */
+  .btn-lh--taupe {
+    --btn-bg: var(--color-taupe);
+    --btn-text: #fff;
+  }
+
+  /* Outline variant — the same fill-wipe, reversed: transparent at rest with a
+     white outline, filling with white on hover (matches `.button--outline` on
+     the dark hero slides). Overrides the base size/position/colours. */
+  .btn-lh--outline {
+    --btn-bg: #fff;
+    --btn-text: #fff;
+    background-size: 0 101%, 101% 101%;
+    background-position: left;
+  }
+  .btn-lh--outline:hover {
+    color: var(--color-espresso);
+    border-color: #fff;
+    background-size: 101% 101%, 0 101%;
+    background-position: right;
+  }
+
+  /* Rich-text H2 — mirrors the live site's `.h2` line-height
+     (1.5, tightening to 1.4 at ≥1150px). Letter-spacing (.2em),
+     Raleway 300 + uppercase already come from the base h2 rules. */
+  .rich-h2 {
+    line-height: 1.5;
+  }
+  @media (min-width: 1150px) {
+    .rich-h2 {
+      line-height: 1.4;
+    }
+  }
+
+  /* Small tracked label used for eyebrows / nav */
+  .eyebrow {
+    font-family: var(--font-heading);
+    font-weight: 300;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 0.75rem;
+  }
+
+  /* Product-card badge — verbatim from the live theme's `.badge-list` /
+     `.badge`. "Buy 3+, Save 15%" is a `.badge--custom`: taupe fill, white
+     text (--custom-badge-background: 143 112 96; --custom-badge-text: 255 255
+     255). The list is absolutely pinned top-left of the card figure; the
+     `--vertical` modifier stacks badges in a column. */
+  .badge-list-lh {
+    position: absolute;
+    z-index: 1;
+    inset-block-start: 0.5rem;
+    inset-inline-start: 0.5rem;
+    display: flex;
+    flex-direction: column; /* --vertical */
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .badge-lh {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    font-family: var(--font-heading);
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-size: 0.625rem;
+    padding: 0.0625rem 0.3125rem;
+    background: var(--color-taupe);
+    color: #fff;
+  }
+  /* .badge--on-sale — the live theme's on-sale badge (plum: 83 58 89). */
+  .badge-lh--sale {
+    background: rgb(83 58 89);
+  }
+  @media (min-width: 700px) {
+    .badge-lh {
+      font-size: 0.6875rem;
+    }
+  }
+
+  /* Enlarged hit area for small icon buttons (matches the theme's .tap-area).
+     Extends the clickable region 0.5rem on every side without affecting layout. */
+  .tap-area {
+    position: relative;
+  }
+  .tap-area::before {
+    content: "";
+    position: absolute;
+    inset: -0.5rem;
+  }
+
+  /* Header nav links + locale switchers.
+     Values taken verbatim from the live site's header links:
+       font-family: Raleway, sans-serif; font-weight: 300;
+       font-style: normal; letter-spacing: .18em; text-transform: uppercase; */
+  .nav-link-lh {
+    font-family: var(--font-heading); /* Raleway, sans-serif */
+    font-weight: 300;
+    font-style: normal;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  /* Animated underline — grows from the left on hover. Mirrors the live site's
+     .prose link underline: a gradient "underline" whose width animates 0 -> 100%
+     via transition (instead of a static text-decoration underline). */
+  /* Underline VISIBLE at rest (full-width, currentColor, 1px). On hover it wipes
+     OUT (the right end retracts leftward) and STAYS hidden the whole time the
+     pointer is on it; on mouse-leave it redraws left→right. The live
+     "reversed-link" behaviour — a transition (not a one-shot animation) so the
+     hidden state holds while hovering. */
+  .link-underline-anim {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-size: 100% 1px;
+    background-position: 0 min(100%, 1.35em);
+    text-decoration: none;
+    transition: background-size 0.35s ease-in-out, color 0.2s ease;
+  }
+  /* Match the theme's 1lh baseline where supported (fallback stays 1.35em). */
+  @supports (height: 1lh) {
+    .link-underline-anim {
+      background-position: 0 min(100%, 1.2lh);
+    }
+  }
+  .link-underline-anim:hover {
+    background-size: 0 1px;
+  }
+
+  /* ============================================================
+     Filter-drawer facet controls — mirror the live theme's
+     `.checkbox-control` / `.dot-checkbox` (Product type + Size)
+     and `.color-swatch` (Colour) so the drawer matches exactly.
+     ============================================================ */
+
+  /* A checkbox row: round "dot" control + "Name (count)" label. */
+  .checkbox-control {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* --checkbox-control-gap */
+    cursor: pointer;
+    font-size: 0.9375rem; /* --text-base */
+    line-height: 1.4;
+    color: var(--color-espresso);
+    transition: color 0.15s ease;
+  }
+  .checkbox-control:hover {
+    color: #000;
+  }
+  .dot-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    flex-shrink: 0;
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 9999px;
+    border: 1px solid rgb(58 47 34 / 0.4);
+    display: grid;
+    place-content: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .dot-checkbox::after {
+    content: "";
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 9999px;
+    background: var(--color-espresso);
+    transform: scale(0);
+    transition: transform 0.15s ease;
+  }
+  .dot-checkbox:checked {
+    border-color: var(--color-espresso);
+  }
+  .dot-checkbox:checked::after {
+    transform: scale(1);
+  }
+  .dot-checkbox:focus-visible {
+    outline: 2px solid var(--color-espresso);
+    outline-offset: 2px;
+  }
+
+  /* A colour swatch chip. Fill comes from --swatch-background (set inline);
+     selected shows an offset ring; light colours get a hairline border. */
+  .color-swatch {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    background-image: var(--swatch-background);
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease;
+  }
+  .color-swatch.is-bordered {
+    box-shadow: inset 0 0 0 1px rgb(58 47 34 / 0.22);
+  }
+  .color-swatch:hover {
+    box-shadow: 0 0 0 1px var(--color-cream), 0 0 0 2px rgb(58 47 34 / 0.4);
+  }
+  .color-swatch.is-selected,
+  .color-swatch.is-selected:hover {
+    box-shadow: 0 0 0 2px var(--color-cream), 0 0 0 3px var(--color-espresso);
+  }
+}
+
+/* Hero autoplay progress ring — the active dot fills over the 6s autoplay,
+   mirroring the live site's `.circular-progress` dots.
+   (circumference = 2·π·3.25 ≈ 20.42) */
+@keyframes dot-progress {
+  from {
+    stroke-dashoffset: 20.42;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Hide the scrollbar on the mobile "text with icons" swipe carousel. */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Footer scrolling marquee band — continuous left scroll. The track holds two
+   identical halves; shifting exactly one half-width loops seamlessly. */
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Shop-the-look hot-spot — white dot (1rem) with a pulsing radial-glow ::after,
+   verbatim from the live site's .shop-the-look__hot-spot. */
+.sl-hotspot {
+  --hot-spot-size: 1rem;
+  position: absolute;
+  width: var(--hot-spot-size);
+  height: var(--hot-spot-size);
+  border-radius: 9999px;
+  background: #fff;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 1px rgb(58 47 34 / 0.1);
+}
+.sl-hotspot::after {
+  --hot-spot-after-size: calc(var(--hot-spot-size) * 2.5);
+  content: "";
+  position: absolute;
+  top: calc(50% - var(--hot-spot-after-size) / 2);
+  left: calc(50% - var(--hot-spot-after-size) / 2);
+  width: var(--hot-spot-after-size);
+  height: var(--hot-spot-after-size);
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgb(255 255 255 / 0),
+    rgb(255 255 255 / 0.3)
+  );
+  border-radius: 9999px;
+  animation: sl-ping 2s ease-in-out infinite alternate;
+}
+@keyframes sl-ping {
+  from {
+    transform: scale(0.8);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   Customer account pages (/authentication/*, /orders).
+   Shopify's hosted "new customer accounts" UI is a SEPARATE
+   visual system from the Prestige store theme: white bg, a
+   neutral sans, and bold sentence-case headings. Scoped to
+   `.account-scope` so it overrides the store's uppercase-
+   Raleway-300 heading base rules for its descendants only.
+   ============================================================ */
+.account-scope {
+  --acc-fg: #1a1a1a; /* near-black text */
+  --acc-muted: #6b6b6b; /* secondary text */
+  --acc-line: #d9d9d9; /* input / card borders */
+  --acc-accent: #5433eb; /* Shopify account purple (checkbox, focus) */
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  letter-spacing: normal;
+  line-height: 1.5;
+  color: var(--acc-fg);
+}
+.account-scope h1,
+.account-scope h2,
+.account-scope h3,
+.account-scope h4 {
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/*
+  ============================================================
+  Progress-stepper animation (OrderProgress `animate` prop)
+  The green fill grows left→right and each node pops in, staggered
+  per step, so completed progress eases in instead of snapping.
+  ============================================================
+*/
+@keyframes lhProgressFill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes lhStepPop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+/* Respect users who prefer reduced motion — show the final state instantly. */
+@media (prefers-reduced-motion: reduce) {
+  [data-lh-progress-fill],
+  [data-lh-progress-pop] {
+    animation: none !important;
+    transition: none !important;
+  }
 }

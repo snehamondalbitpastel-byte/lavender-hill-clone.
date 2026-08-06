@@ -1,0 +1,564 @@
+[
+  {
+    "id": 1,
+    "slug": "scoop-neck-cotton-modal-blend-t-shirt",
+    "title": "Scoop Neck Cotton Modal T-Shirt",
+    "price": "Rs. 6,400.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Short_sleeve_blue_t-shirt.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Light_blue_scoop_neck_t-shirt.webp?width=800",
+    "rating": 4.6,
+    "reviews": 109,
+    "badge": "Buy 3+, Save 15%",
+    "colors": [
+      "white",
+      "#24243d",
+      "black",
+      "#b4adce",
+      "#e7dac8",
+      "#b3cbdc",
+      "#efcfd9"
+    ]
+  },
+  {
+    "id": 2,
+    "slug": "supima-cotton-high-neck-tank-top",
+    "title": "Supima Cotton High Neck Tank Top",
+    "price": "Rs. 7,200.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/SupimaCottonWhiteTankTop.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Supima_Cotton_White_Tank_Top_2.webp?width=800",
+    "rating": 0,
+    "reviews": 0,
+    "badge": null,
+    "colors": [
+      "#FFFFFF"
+    ]
+  },
+  {
+    "id": 3,
+    "slug": "linen-t-shirt",
+    "title": "Linen T-shirt",
+    "price": "Rs. 7,200.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/0E064F44-B7A5-4161-8E58-E88859A7CD2F.png?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Banana_Yellow_T-shirt.png?width=800",
+    "rating": 4.5,
+    "reviews": 46,
+    "badge": null,
+    "colors": [
+      "#e2dcb4",
+      "#efcfd9",
+      "#b3cbdc",
+      "white",
+      "#24243d",
+      "black"
+    ]
+  },
+  {
+    "id": 4,
+    "slug": "collared-linen-t-shirt",
+    "title": "Collared Linen T-shirt",
+    "price": "Rs. 9,800.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Collared_Linen_Shirt.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Crimson_Linen_shirt.webp?width=800",
+    "rating": 4.7,
+    "reviews": 49,
+    "badge": null,
+    "colors": [
+      "crimson",
+      "#24243d",
+      "white",
+      "#e3af57",
+      "#669eab"
+    ]
+  },
+  {
+    "id": 5,
+    "slug": "long-sleeve-striped-linen-t-shirt",
+    "title": "Long Sleeve Striped Linen T-shirt",
+    "price": "Rs. 10,300.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Olive_and_white_linen_stripe_1.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/olivewhitestripedlinent-shirt.webp?width=800",
+    "rating": 0,
+    "reviews": 0,
+    "badge": null,
+    "colors": [
+      "#24243d",
+      "#7c7a69"
+    ]
+  },
+  {
+    "id": 6,
+    "slug": "organic-cotton-scoop-neck-tank-top",
+    "title": "Organic Cotton Scoop Neck Tank Top",
+    "price": "Rs. 5,900.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/MushroomScoopNeckTankTop_1080x1680px.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/OrganicScoopTank_RosyBrown__40_LavenderHillClothing.webp?width=800",
+    "rating": 0,
+    "reviews": 0,
+    "badge": null,
+    "colors": [
+      "white",
+      "#8f7060",
+      "#e7dac8"
+    ]
+  },
+  {
+    "id": 7,
+    "slug": "supima-cotton-crew-neck-t-shirt",
+    "title": "Supima Cotton Crew Neck T-Shirt",
+    "price": "Rs. 7,200.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Supima_Cotton_White_Crew_Neck_Top.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Supima_Cotton_White_Crew_Neck_Top_Detailing_1.webp?width=800",
+    "rating": 0,
+    "reviews": 0,
+    "badge": null,
+    "colors": [
+      "#FFFFFF"
+    ]
+  },
+  {
+    "id": 8,
+    "slug": "threequartersleevescooptshirt",
+    "title": "3/4 Sleeve Scoop Neck Cotton Modal T-Shirt",
+    "price": "Rs. 7,100.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Light_pink_34_sleeve_scoop_neck_t-shirt.jpg?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Light_pink_34_sleeve_scoop_neck_t-shirt.webp?width=800",
+    "rating": 4.7,
+    "reviews": 154,
+    "badge": "Buy 3+, Save 15%",
+    "colors": [
+      "#efcfd9",
+      "#b4adce",
+      "#b3cbdc",
+      "#be5a9f",
+      "black",
+      "white",
+      "#24243d"
+    ]
+  },
+  {
+    "id": 9,
+    "slug": "mock-neck",
+    "title": "Mock Neck Micro Modal Top",
+    "price": "Rs. 8,500.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Quality_womens_mock_neck_top.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/HalfSleeveMockNeck_Cream__59.00_LavenderHillClothing.webp?width=800",
+    "rating": 4.7,
+    "reviews": 35,
+    "badge": null,
+    "colors": [
+      "#e7dac8",
+      "#24243d",
+      "black"
+    ]
+  },
+  {
+    "id": 10,
+    "slug": "stripedthreequartersleevetshirt",
+    "title": "Striped Crew Neck T-shirt",
+    "price": "Rs. 7,700.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Womensstripedcrewnecktop.jpg?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Womensstripedcrewnecktop_2.jpg?width=800",
+    "rating": 4.8,
+    "reviews": 32,
+    "badge": null,
+    "colors": [
+      "#3160a6",
+      "#4540a0"
+    ]
+  },
+  {
+    "id": 11,
+    "slug": "boat-neck-cotton-modal-blend-t-shirt",
+    "title": "Boat Neck Cotton Modal T-Shirt",
+    "price": "Rs. 6,400.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/BoatNeckT-shirtNavy.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/BoatNeckT-shirtNavyStool.webp?width=800",
+    "rating": 4.7,
+    "reviews": 49,
+    "badge": "Buy 3+, Save 15%",
+    "colors": [
+      "#24243d",
+      "black",
+      "white"
+    ]
+  },
+  {
+    "id": 12,
+    "slug": "short-sleeve-crew-neck-cotton-modal-blend-t-shirt",
+    "title": "Crew Neck Cotton Modal T-shirt",
+    "price": "Rs. 6,400.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/CrewNeckT-shirtWhite_LavenderHillClothing.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/ShortSleeveCrewNeckT-shirt_White_1.webp?width=800",
+    "rating": 4.9,
+    "reviews": 38,
+    "badge": "Buy 3+, Save 15%",
+    "colors": [
+      "black",
+      "#24243d",
+      "white",
+      "#e7dac8"
+    ]
+  },
+  {
+    "id": 13,
+    "slug": "striped-cotton-polo-neck",
+    "title": "Striped Cotton Roll Neck",
+    "price": "Rs. 8,500.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Yellow_Striped_Top.jpg?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/StripedRollNeck_YellowWhite__55_LavenderHillClothing_fb619c97-c362-4cf0-a749-3bc04ccb90bd.webp?width=800",
+    "rating": 4.8,
+    "reviews": 50,
+    "badge": null,
+    "colors": [
+      "#c23331",
+      "#deb39c",
+      "#24243d",
+      "#4540a0",
+      "#133e93",
+      "#e2dcb4",
+      "red",
+      "#3160a6"
+    ]
+  },
+  {
+    "id": 14,
+    "slug": "long-sleeve-crew-neck-cotton-modal-blend-t-shirt",
+    "title": "Long Sleeve Crew Neck Cotton Modal T-shirt",
+    "price": "Rs. 7,700.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Quality_womens_long_sleeve_crew_neck_top.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/LongSleeveCrewNeckT-shirt_White.webp?width=800",
+    "rating": 4.8,
+    "reviews": 75,
+    "badge": "Buy 3+, Save 15%",
+    "colors": [
+      "white",
+      "#24243d",
+      "black"
+    ]
+  },
+  {
+    "id": 15,
+    "slug": "ribbed-lounge-jumper",
+    "title": "Ribbed Lounge Jumper",
+    "price": "Rs. 15,600.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Quality_alpaca_knit_lounge_set_1.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Quality_alpaca_knit_lounge_set_2.webp?width=800",
+    "rating": 0,
+    "reviews": 0,
+    "badge": null,
+    "colors": [
+      "#3160a6",
+      "#d2c1b6"
+    ]
+  },
+  {
+    "id": 16,
+    "slug": "roll-neck-micro-modal-top",
+    "title": "Roll Neck Micro Modal Top",
+    "price": "Rs. 10,300.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Cream_Roll_Neck_Top.png?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Creamladiesrollneck_a14bb925-b4c8-4f5c-a5ef-07bd4c775521.webp?width=800",
+    "rating": 4.8,
+    "reviews": 45,
+    "badge": "Buy 3+, Save 15%",
+    "colors": [
+      "#e7dac8",
+      "chocolate",
+      "#d6b39e",
+      "#24243d",
+      "black",
+      "silver"
+    ]
+  },
+  {
+    "id": 17,
+    "slug": "ribbed-lounge-trousers",
+    "title": "Ribbed Lounge Trousers",
+    "price": "Rs. 18,100.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Quality_alpaca_knit_lounge_set_fc9db43c-4697-44b2-bb92-98046275d426.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Quality_alpaca_knit_lounge_set_1_d3a4bdc1-99c7-41ef-b310-b1d6e5055fe0.webp?width=800",
+    "rating": 0,
+    "reviews": 0,
+    "badge": null,
+    "colors": [
+      "#3160a6",
+      "#d2c1b6"
+    ]
+  },
+  {
+    "id": 18,
+    "slug": "womens-pyjamas",
+    "title": "Shawl Collared Pyjama Set",
+    "price": "Rs. 18,200.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Luxury_Womens_Pyjamas.png?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Luxury_Womens_Pyjamas_2.png?width=800",
+    "rating": 0,
+    "reviews": 0,
+    "badge": null,
+    "colors": [
+      "light grey"
+    ]
+  },
+  {
+    "id": 19,
+    "slug": "micro-modal-yoga-trousers",
+    "title": "Micro Modal Yoga Trousers",
+    "price": "Rs. 10,300.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/YogaPants_016.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/YogaPants_041.webp?width=800",
+    "rating": 4.9,
+    "reviews": 10,
+    "badge": null,
+    "colors": [
+      "black",
+      "#24243d"
+    ]
+  },
+  {
+    "id": 20,
+    "slug": "sleeveless-mock-neck-micro-modal-top",
+    "title": "Sleeveless Mock Neck Micro Modal Top",
+    "price": "Rs. 7,200.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/Black_Mock_Neck_Top.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/SleevelessMockNeck_Black__54.00_LavenderHillClothing.webp?width=800",
+    "rating": 4.8,
+    "reviews": 4,
+    "badge": null,
+    "colors": [
+      "black"
+    ]
+  },
+  {
+    "id": 21,
+    "slug": "3-4-sleeve-collared-cotton-modal-blend-t-shirt-7",
+    "title": "3/4 Sleeve Collared Cotton Modal Blend T-Shirt",
+    "price": "Rs. 5,200.00",
+    "compareAt": "Rs. 7,200.00",
+    "saveBadge": "Save Rs. 2,000.00",
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/WomensNavyCollared3_4SleeveT-shirt.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/WomensPlumCollared3_4SleeveT-shirt.webp?width=800",
+    "rating": 5,
+    "reviews": 8,
+    "badge": null,
+    "colors": [
+      "#24243d",
+      "green"
+    ]
+  },
+  {
+    "id": 22,
+    "slug": "womens-sleeveless-vest-top",
+    "title": "Sleeveless Micro Modal Vest Top",
+    "price": "Rs. 5,900.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/WhiteVestandhipsterpants.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Ladiessoftvesttop-asfeaturedintheTelegraph.webp?width=800",
+    "rating": 4.9,
+    "reviews": 51,
+    "badge": "Buy 3+, Save 15%",
+    "colors": [
+      "white",
+      "black",
+      "#24243d",
+      "#d6b39e",
+      "silver",
+      "peach puff"
+    ]
+  },
+  {
+    "id": 23,
+    "slug": "half-sleeve-scoop-neck-cotton-modal-blend-t-shirt",
+    "title": "Half Sleeve Cotton Modal Scoop Neck T-Shirt",
+    "price": "Rs. 6,800.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/women_s_white_cotton_modal_half_sleeve_scoop_neck_T-shirt.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/1_2SleeveScoopT-shirtBlack.webp?width=800",
+    "rating": 4.7,
+    "reviews": 83,
+    "badge": "Buy 3+, Save 15%",
+    "colors": [
+      "white",
+      "black",
+      "#24243d"
+    ]
+  },
+  {
+    "id": 24,
+    "slug": "3-4-sleeve-boat-neck-cotton-modal-blend-t-shirt",
+    "title": "3/4 Sleeve Cotton Modal Boat Neck T-Shirt",
+    "price": "Rs. 7,100.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/QualityWomens3_4SleeveNavyScoopNeckT-shirt2.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/3.4SleeveBoatT-shirt_Navy.webp?width=800",
+    "rating": 4.9,
+    "reviews": 27,
+    "badge": "Buy 3+, Save 15%",
+    "colors": [
+      "black",
+      "#24243d",
+      "white"
+    ]
+  },
+  {
+    "id": 25,
+    "slug": "womens-scoop-neck-tank-top",
+    "title": "Ribbed Scoop Neck Tank",
+    "price": "Rs. 3,300.00",
+    "compareAt": "Rs. 5,200.00",
+    "saveBadge": "Save Rs. 1,900.00",
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/ScoopNeckTank_White_1.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/TankTop_White.webp?width=800",
+    "rating": 5,
+    "reviews": 7,
+    "badge": null,
+    "colors": [
+      "ivory"
+    ]
+  },
+  {
+    "id": 26,
+    "slug": "v-neck-cotton-modal-blend-t-shirt",
+    "title": "V-Neck Cotton Modal T-Shirt",
+    "price": "Rs. 6,400.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/VNeckWomensQualityT-shirt.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/VNeckT-shirtNavy.webp?width=800",
+    "rating": 4.6,
+    "reviews": 30,
+    "badge": "Buy 3+, Save 15%",
+    "colors": [
+      "white",
+      "black",
+      "#24243d"
+    ]
+  },
+  {
+    "id": 27,
+    "slug": "half-sleeve-crew-neck-cotton-modal-blend-t-shirt",
+    "title": "Half Sleeve Crew Neck Cotton Modal T-shirt",
+    "price": "Rs. 6,800.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/1_2SleeveCrewNeckT-shirtNavy.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/HalfSleeveCrewNeck_Navy__49_LavenderHillClothing.webp?width=800",
+    "rating": 4.7,
+    "reviews": 55,
+    "badge": "Buy 3+, Save 15%",
+    "colors": [
+      "black",
+      "#24243d",
+      "white",
+      "#e7dac8"
+    ]
+  },
+  {
+    "id": 28,
+    "slug": "wrap-top",
+    "title": "Wrap Top",
+    "price": "Rs. 8,500.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/WrapBlack_005.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/WrapBlack_037.webp?width=800",
+    "rating": 4.5,
+    "reviews": 10,
+    "badge": null,
+    "colors": [
+      "black",
+      "#24243d"
+    ]
+  },
+  {
+    "id": 29,
+    "slug": "print-pyjama-trousers",
+    "title": "Print Pyjama Trousers",
+    "price": "Rs. 4,600.00",
+    "compareAt": "Rs. 8,500.00",
+    "saveBadge": "Save Rs. 3,900.00",
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/BlueprintPyjamatrousers.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/WomensPatternedpyjamaset_06239302-ec1d-4597-852a-63d99e09a911.webp?width=800",
+    "rating": 5,
+    "reviews": 1,
+    "badge": null,
+    "colors": [
+      "#b3cbdc"
+    ]
+  },
+  {
+    "id": 30,
+    "slug": "merino-wool-socks",
+    "title": "Merino Wool Socks",
+    "price": "Rs. 1,900.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/BLACKMERINOSOCK_ae2a536b-7ee5-4dc2-b46f-782dd32756ee.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/Merino_Wool_Socks_-_Navy_ea2ef8ad-f1e6-4667-b349-2f4218307925.webp?width=800",
+    "rating": 4.8,
+    "reviews": 18,
+    "badge": null,
+    "colors": [
+      "#24243d",
+      "#740f21",
+      "black",
+      "coffee"
+    ]
+  },
+  {
+    "id": 31,
+    "slug": "pure-essential-lavender-oil",
+    "title": "Pure Essential Lavender Oil",
+    "price": "Rs. 1,600.00",
+    "compareAt": null,
+    "saveBadge": null,
+    "image": "https://cdn.shopify.com/s/files/1/0294/5973/files/PureEssentialLavenderOil.webp?width=800",
+    "hover": "https://cdn.shopify.com/s/files/1/0294/5973/files/PureEssentialLavenderOil.webp?width=800",
+    "rating": 5,
+    "reviews": 1,
+    "badge": null,
+    "colors": []
+  }
+]

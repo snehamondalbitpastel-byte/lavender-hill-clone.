@@ -1,0 +1,17 @@
+-- CreateTable
+CREATE TABLE "MenuGroup" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "title" TEXT NOT NULL,
+    "href" TEXT NOT NULL,
+    "order" INTEGER NOT NULL DEFAULT 0
+);
+
+-- CreateTable
+CREATE TABLE "MenuLink" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "label" TEXT NOT NULL,
+    "href" TEXT NOT NULL,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "groupId" INTEGER NOT NULL,
+    CONSTRAINT "MenuLink_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "MenuGroup" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
