@@ -21,11 +21,11 @@ export default function Home() {
         <Hero />
         <WhyLavenderHill />
         <ShopByCategory />
-        <AsStyledByYou />
         <Testimonials />
         <FeaturedCollections />
         <PressLogos />
         <BehindTheBrand />
+        <AsStyledByYou />
       </main>
       <FooterFeatures />
       <ScrollingText />
