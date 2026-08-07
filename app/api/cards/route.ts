@@ -19,6 +19,7 @@ export async function GET(request: Request) {
   const category = searchParams.get("category");
   const sale = searchParams.get("sale");
   const newIn = searchParams.get("new");
+  const bestseller = searchParams.get("bestseller");
 
   // Sale view — every on-sale card.
   if (sale === "true") {
@@ -34,6 +35,21 @@ export async function GET(request: Request) {
   if (newIn === "true") {
     const products = await prisma.product.findMany({
       where: { isNew: true },
+      select: { slug: true },
+    });
+    const slugs = products.map((p) => p.slug);
+    const cards = await prisma.card.findMany({
+      where: { productSlug: { in: slugs } },
+      orderBy: { order: "asc" },
+    });
+    return Response.json(cards.map(parse));
+  }
+
+  // Bestsellers view — cards whose product is flagged "Bestseller" (the home
+  // page "Our Bestselling T-Shirts" section reads this).
+  if (bestseller === "true") {
+    const products = await prisma.product.findMany({
+      where: { bestseller: true },
       select: { slug: true },
     });
     const slugs = products.map((p) => p.slug);

@@ -314,9 +314,13 @@ export default function ProductForm({
         <div className="rounded-md bg-beige/70 border border-line px-3 py-2.5 mb-4 text-xs text-espresso/70 leading-relaxed">
           Every product shows on <b className="text-espresso">Shop</b> automatically. Add a <b className="text-espresso">Compare-at price</b> to put it on <b className="text-espresso">Sale</b>. Tick below to feature it on <b className="text-espresso">New Arrivals</b>.
         </div>
-        <label className="flex items-center gap-2 text-sm text-espresso cursor-pointer mb-5">
+        <label className="flex items-center gap-2 text-sm text-espresso cursor-pointer mb-3">
           <input type="checkbox" checked={f.isNew} onChange={(e) => set("isNew", e.target.checked)} className="w-4 h-4 accent-espresso" />
           Show on New In page
+        </label>
+        <label className="flex items-center gap-2 text-sm text-espresso cursor-pointer mb-5">
+          <input type="checkbox" checked={f.bestseller} onChange={(e) => set("bestseller", e.target.checked)} className="w-4 h-4 accent-espresso" />
+          Feature in “Our Bestselling T-Shirts” (home page)
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl">
           <div>

@@ -128,6 +128,11 @@ export function getNewInCards(): Promise<Card[]> {
   return apiFetch<Card[]>("/cards?new=true");
 }
 
+// Home "Our Bestselling T-Shirts" — cards whose product is flagged "Bestseller".
+export function getBestsellerCards(): Promise<Card[]> {
+  return apiFetch<Card[]>("/cards?bestseller=true");
+}
+
 // Home-page hero carousel slides (admin-managed via /api/hero).
 export type HeroButton = { label: string; href: string; variant: "taupe" | "light" | "outline" };
 export type HeroSlide = {
