@@ -339,3 +339,24 @@ model CollectionPage {
   breadcrumbs String // JSON array of { label, href }
   links       String // JSON array of { label, href }
 }
+
+// Home-page hero carousel slides — fully admin-editable (photo, copy, and the
+// CTA buttons + their links). `buttons` is a JSON array so a slide can carry
+// 0–2 CTAs. Styling fields (position/gradient/overlay/titleSize/box) mirror the
+// original static slides so nothing is lost; they default sensibly for new ones.
+model HeroSlide {
+  id        Int      @id @default(autoincrement())
+  title     String
+  bold      Boolean  @default(false) // render the title bold
+  align     String   @default("center") // desktop text alignment: start | center | end
+  image     String // background photo (/public or an /uploads path)
+  position  String   @default("center") // CSS background-position (e.g. "32% 50%")
+  gradient  String   @default("") // fallback gradient CSS while the image loads
+  overlay   String   @default("") // optional darkening overlay CSS
+  titleSize String   @default("") // optional Tailwind size override for the title
+  box       String   @default("") // optional Tailwind width/offset override
+  buttons   String   @default("[]") // JSON: [{ label, href, variant: taupe|light|outline }]
+  order     Int      @default(0) // carousel order
+  active    Boolean  @default(true) // show/hide without deleting
+  createdAt DateTime @default(now())
+}

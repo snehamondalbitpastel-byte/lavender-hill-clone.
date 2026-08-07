@@ -128,6 +128,27 @@ export function getNewInCards(): Promise<Card[]> {
   return apiFetch<Card[]>("/cards?new=true");
 }
 
+// Home-page hero carousel slides (admin-managed via /api/hero).
+export type HeroButton = { label: string; href: string; variant: "taupe" | "light" | "outline" };
+export type HeroSlide = {
+  id: number;
+  title: string;
+  bold: boolean;
+  align: "start" | "center" | "end";
+  image: string;
+  position: string;
+  gradient: string;
+  overlay: string;
+  titleSize: string;
+  box: string;
+  buttons: HeroButton[];
+  order: number;
+  active: boolean;
+};
+export function getHero(): Promise<HeroSlide[]> {
+  return apiFetch<HeroSlide[]>("/hero");
+}
+
 // A category node (nested via parentId).
 export type Category = {
   id: number;

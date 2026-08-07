@@ -2,73 +2,23 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { ChevronDown } from "./Icons";
+import { useFetch } from "@/hooks/useFetch";
+import { getHero, type HeroSlide } from "@/lib/api";
 
-type Align = "end" | "start" | "center";
-type Variant = "taupe" | "light" | "outline";
-
-type Slide = {
-  title: string;
-  bold: boolean;
-  align: Align;
-  image: string;
-  position: string;
-  gradient: string;
-  buttons: { label: string; href: string; variant: Variant }[];
-  titleSize?: string;
-  box?: string;
-  overlay?: string;
-};
-
-// Each slide mirrors the live site's hero carousel — its own copy, alignment
-// and button(s). Real photos live in /public; the gradient is a load fallback.
-const SLIDES: Slide[] = [
-  {
-    title: "The Linen Collection",
-    bold: true,
-    align: "end", // desktop: centre-right, text-end
-    titleSize: "text-3xl md:text-4xl lg:text-[42px]", // bigger than the default hero h1
-    box: "max-w-255", // wide enough to keep it on one line (extends leftward)
-    image: "/hero-striped-linen-top.jpg",
-    position: "32% 50%",
-    gradient: "linear-gradient(135deg, #cfc6ba 0%, #a99e8e 55%, #6f6353 100%)",
-    buttons: [{ label: "Shop now", href: "#", variant: "taupe" }],
-  },
-  {
-    title: "Back in stock",
-    bold: false,
-    align: "start", // desktop: centre-left, text-start
-    box: "max-w-212 sm:ml-2 sm:-translate-y-8", // off the left edge + a little higher
-    image: "/hero-white-linen-shirt.jpg",
-    position: "center",
-    gradient: "linear-gradient(135deg, #d8cfc4 0%, #b6a996 60%, #7d6f5c 100%)",
-    buttons: [{ label: "Shop Now", href: "#", variant: "light" }],
-  },
-  {
-    title: "The Perfect Women’s T-Shirt, Redefined",
-    bold: false,
-    align: "end", // desktop: centre-right, text-end
-    image: "/hero-vneck-tshirt.jpg",
-    position: "center",
-    gradient: "linear-gradient(135deg, #c7bcae 0%, #9c8f7c 55%, #635747 100%)",
-    buttons: [
-      { label: "Shop Women’s T-Shirts", href: "#", variant: "light" },
-      { label: "Find Your Perfect Tee", href: "#", variant: "outline" },
-    ],
-  },
-];
-
-// Content alignment on desktop (all are vertically centred).
-const ALIGN: Record<Align, string> = {
+// Hero carousel — slides are ADMIN-MANAGED (DB via /api/hero), not hardcoded.
+// Each slide brings its own copy, alignment, background + CTA buttons (with real
+// links). Styling maps below turn a slide's string fields into Tailwind classes.
+const ALIGN: Record<string, string> = {
   end: "sm:items-end sm:text-end",
   start: "sm:items-start sm:text-start",
   center: "sm:items-center sm:text-center",
 };
-const BTN_JUSTIFY: Record<Align, string> = {
+const BTN_JUSTIFY: Record<string, string> = {
   end: "sm:justify-end",
   start: "sm:justify-start",
   center: "sm:justify-center",
 };
-const BTN_VARIANT: Record<Variant, string> = {
+const BTN_VARIANT: Record<string, string> = {
   taupe: "btn-lh btn-lh--taupe",
   light: "btn-lh btn-lh--light",
   outline: "btn-lh btn-lh--outline",
@@ -77,52 +27,57 @@ const BTN_VARIANT: Record<Variant, string> = {
 const AUTOPLAY_MS = 6000;
 
 export default function Hero() {
+  const { data } = useFetch<HeroSlide[]>(getHero);
+  const slides = data ?? [];
   const [active, setActive] = useState(0);
 
+  const count = slides.length;
   const go = useCallback(
-    (i: number) => setActive((i + SLIDES.length) % SLIDES.length),
-    []
+    (i: number) => setActive((i + Math.max(count, 1)) % Math.max(count, 1)),
+    [count]
   );
 
-  // Autoplay every 6s; restarts whenever the active slide changes (so manual
-  // navigation resets the countdown, matching the live carousel).
+  // Autoplay every 6s; restarts whenever the active slide (or count) changes.
   useEffect(() => {
-    const id = setInterval(
-      () => setActive((i) => (i + 1) % SLIDES.length),
-      AUTOPLAY_MS
-    );
+    if (count <= 1) return;
+    const id = setInterval(() => setActive((i) => (i + 1) % count), AUTOPLAY_MS);
     return () => clearInterval(id);
-  }, [active]);
+  }, [active, count]);
+
+  // Keep `active` valid if slides change (one hidden/removed in admin).
+  useEffect(() => {
+    if (active >= count && count > 0) setActive(0);
+  }, [count, active]);
 
   return (
     <section className="relative overflow-hidden bg-black h-[calc(100vh-104px)] min-h-[680px] md:h-auto md:min-h-[560px] md:aspect-[2200/1111]">
-      {SLIDES.map((slide, i) => {
+      {slides.map((slide, i) => {
         const isActive = i === active;
         return (
           <div
-            key={slide.title}
+            key={slide.id}
             className="absolute inset-0 transition-opacity duration-700 ease-in-out"
             style={{
               opacity: isActive ? 1 : 0,
               pointerEvents: isActive ? "auto" : "none",
               backgroundColor: "#a99e8e",
-              backgroundImage: `url(${slide.image}), ${slide.gradient}`,
+              backgroundImage: `url(${slide.image}), ${
+                slide.gradient || "linear-gradient(135deg, #cfc6ba 0%, #6f6353 100%)"
+              }`,
               backgroundSize: "cover",
-              backgroundPosition: slide.position,
+              backgroundPosition: slide.position || "center",
               backgroundRepeat: "no-repeat",
             }}
             aria-hidden={!isActive}
           >
-            {/* optional darkening gradient (slide 3 on the live site) */}
             {slide.overlay && (
-              <div
-                className="absolute inset-0"
-                style={{ background: slide.overlay }}
-              />
+              <div className="absolute inset-0" style={{ background: slide.overlay }} />
             )}
 
             <div
-              className={`relative h-full w-full px-5 md:px-8 lg:px-12 flex flex-col justify-center items-center text-center ${ALIGN[slide.align]} text-cream`}
+              className={`relative h-full w-full px-5 md:px-8 lg:px-12 flex flex-col justify-center items-center text-center ${
+                ALIGN[slide.align] || ALIGN.center
+              } text-cream`}
             >
               <div className={slide.box || "max-w-212"}>
                 <h1
@@ -136,14 +91,20 @@ export default function Hero() {
                 </h1>
 
                 <div
-                  className={`mt-9 flex flex-wrap gap-3 justify-center ${BTN_JUSTIFY[slide.align]} transition-all duration-500 delay-100 ease-out`}
+                  className={`mt-9 flex flex-wrap gap-3 justify-center ${
+                    BTN_JUSTIFY[slide.align] || BTN_JUSTIFY.center
+                  } transition-all duration-500 delay-100 ease-out`}
                   style={{
                     opacity: isActive ? 1 : 0,
                     transform: isActive ? "translateY(0)" : "translateY(20px)",
                   }}
                 >
-                  {slide.buttons.map((b) => (
-                    <a key={b.label} href={b.href} className={BTN_VARIANT[b.variant]}>
+                  {slide.buttons.map((b, bi) => (
+                    <a
+                      key={bi}
+                      href={b.href || "#"}
+                      className={BTN_VARIANT[b.variant] || BTN_VARIANT.light}
+                    >
                       {b.label}
                     </a>
                   ))}
@@ -154,47 +115,40 @@ export default function Hero() {
         );
       })}
 
-      {/* Progress-ring dots — active dot fills over the 6s autoplay.
-          Positioned in the bottom-right corner of the carousel. */}
-      <div className="absolute bottom-8 right-6 md:right-8 lg:right-12 flex gap-3 z-10 text-cream">
-        {SLIDES.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => go(i)}
-            aria-label={`Go to slide ${i + 1}`}
-            className="p-1.5 hover:opacity-100 transition-opacity"
-            style={{ opacity: i === active ? 1 : 0.65 }}
-          >
-            <svg width="11" height="11" viewBox="0 0 8 8" className="-rotate-90">
-              <circle
-                cx="4"
-                cy="4"
-                r="3.25"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeOpacity="0.3"
-              />
-              {i === active && (
-                <circle
-                  key={active}
-                  cx="4"
-                  cy="4"
-                  r="3.25"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  style={{
-                    strokeDasharray: 20.42,
-                    animation: `dot-progress ${AUTOPLAY_MS}ms linear forwards`,
-                  }}
-                />
-              )}
-            </svg>
-          </button>
-        ))}
-      </div>
+      {/* Progress-ring dots — active dot fills over the 6s autoplay. */}
+      {count > 1 && (
+        <div className="absolute bottom-8 right-6 md:right-8 lg:right-12 flex gap-3 z-10 text-cream">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => go(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              className="p-1.5 hover:opacity-100 transition-opacity"
+              style={{ opacity: i === active ? 1 : 0.65 }}
+            >
+              <svg width="11" height="11" viewBox="0 0 8 8" className="-rotate-90">
+                <circle cx="4" cy="4" r="3.25" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3" />
+                {i === active && (
+                  <circle
+                    key={active}
+                    cx="4"
+                    cy="4"
+                    r="3.25"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    style={{
+                      strokeDasharray: 20.42,
+                      animation: `dot-progress ${AUTOPLAY_MS}ms linear forwards`,
+                    }}
+                  />
+                )}
+              </svg>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Scroll-down chevron */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10">
