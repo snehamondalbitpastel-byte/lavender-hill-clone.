@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type IconName =
-  | "dashboard" | "orders" | "returns" | "discounts" | "products" | "categories" | "customers" | "content" | "hero";
+  | "dashboard" | "orders" | "returns" | "discounts" | "products" | "categories" | "customers" | "content" | "hero" | "collections";
 
 const NAV: { href: string; label: string; icon: IconName; exact?: boolean }[] = [
   { href: "/admin", label: "Dashboard", icon: "dashboard", exact: true },
@@ -19,6 +19,7 @@ const NAV: { href: string; label: string; icon: IconName; exact?: boolean }[] = 
   { href: "/admin/customers", label: "Customers", icon: "customers" },
   { href: "/admin/content", label: "Content", icon: "content" },
   { href: "/admin/hero", label: "Hero", icon: "hero" },
+  { href: "/admin/collections", label: "Collections", icon: "collections" },
 ];
 
 // Exact Lucide glyphs (viewBox 0 0 24 24, stroke = currentColor).
@@ -44,6 +45,8 @@ function NavIcon({ name }: { name: IconName }) {
       return <svg viewBox="0 0 24 24" className={cls}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" {...p} /><path d="M14 2v4a2 2 0 0 0 2 2h4" {...p} /><path d="M16 13H8" {...p} /><path d="M16 17H8" {...p} /><path d="M10 9H8" {...p} /></svg>;
     case "hero": // image
       return <svg viewBox="0 0 24 24" className={cls}><rect width="18" height="18" x="3" y="3" rx="2" {...p} /><circle cx="9" cy="9" r="2" {...p} /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" {...p} /></svg>;
+    case "collections": // layout-grid
+      return <svg viewBox="0 0 24 24" className={cls}><rect width="7" height="7" x="3" y="3" rx="1" {...p} /><rect width="7" height="7" x="14" y="3" rx="1" {...p} /><rect width="7" height="7" x="14" y="14" rx="1" {...p} /><rect width="7" height="7" x="3" y="14" rx="1" {...p} /></svg>;
   }
 }
 
