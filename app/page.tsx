@@ -3,6 +3,7 @@ import Header from "./components/Header";
 import Hero from "./components/Hero";
 import WhyLavenderHill from "./components/WhyLavenderHill";
 import ShopByCategory from "./components/ShopByCategory";
+import AsStyledByYou from "./components/AsStyledByYou";
 import Testimonials from "./components/Testimonials";
 import FeaturedCollections from "./components/FeaturedCollections";
 import PressLogos from "./components/PressLogos";
@@ -20,6 +21,7 @@ export default function Home() {
         <Hero />
         <WhyLavenderHill />
         <ShopByCategory />
+        <AsStyledByYou />
         <Testimonials />
         <FeaturedCollections />
         <PressLogos />
