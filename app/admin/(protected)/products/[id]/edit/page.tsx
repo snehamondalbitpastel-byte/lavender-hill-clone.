@@ -40,6 +40,7 @@ export default async function EditProductPage({
     slug: p.slug,
     description: p.description,
     category: p.category,
+    categories: p.categories,
     productType: p.productType,
     price: p.price,
     compareAtPrice: p.compareAtPrice ?? "",

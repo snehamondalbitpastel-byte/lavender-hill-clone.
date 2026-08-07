@@ -206,7 +206,8 @@ model Product {
   title       String
   slug        String   @unique
   description String   @default("")
-  category    String   @default("") // handle: t-shirts | loungewear | socks | accessories | toiletries
+  category    String   @default("") // primary category handle (breadcrumb parent + default)
+  categories  String[] @default([]) // extra category handles — a product can appear in several collections
   productType String
   price       String // the normal (list) price shown on the card
   compareAtPrice String? // original price; if higher than `price` → On Sale + "Save Rs X"

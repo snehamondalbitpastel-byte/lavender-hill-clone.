@@ -91,6 +91,7 @@ export type ProductData = {
   title: string;
   description: string;
   category: string;
+  categories: string[];
   productType: string;
   price: string;
   compareAtPrice: string | null;
@@ -195,6 +196,9 @@ export function normalizeProduct(body: any): Result {
     title,
     description: String(body.description ?? "").trim(),
     category: String(body.category ?? "").trim(),
+    categories: Array.isArray(body.categories)
+      ? body.categories.map((x: unknown) => String(x).trim()).filter(Boolean)
+      : [],
     productType: String(body.productType ?? "").trim(),
     price,
     compareAtPrice,

@@ -63,7 +63,7 @@ export async function GET(request: Request) {
   // Category view — only cards whose product belongs to this category.
   if (category) {
     const products = await prisma.product.findMany({
-      where: { category },
+      where: { OR: [{ category }, { categories: { has: category } }] },
       select: { slug: true },
     });
     const slugs = products.map((p) => p.slug);

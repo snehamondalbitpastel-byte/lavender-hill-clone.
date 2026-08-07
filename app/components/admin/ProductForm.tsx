@@ -16,6 +16,7 @@ export type ProductFormData = {
   slug: string;
   description: string;
   category: string;
+  categories: string[];
   productType: string;
   price: string;
   compareAtPrice: string;
@@ -76,6 +77,7 @@ export default function ProductForm({
     slug: initial?.slug ?? "",
     description: initial?.description ?? "",
     category: initial?.category ?? "",
+    categories: initial?.categories ?? [],
     productType: initial?.productType ?? "",
     price: initial?.price ?? "",
     compareAtPrice: initial?.compareAtPrice ?? "",
@@ -166,6 +168,26 @@ export default function ProductForm({
                   <input className={inputCls} value={f.productType} onChange={(e) => set("productType", e.target.value)} placeholder="Women's Short Sleeve T-shirt" />
                 </div>
               </div>
+              {categories.length > 0 && (
+                <div>
+                  <label className={labelCls}>Also show in these categories <span className="normal-case text-espresso/40">— optional; a product can appear in several collections</span></label>
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 border border-line rounded-md p-3 bg-white">
+                    {categories.map((c) => (
+                      <label key={c.handle} className="flex items-center gap-1.5 text-sm text-espresso cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 accent-espresso"
+                          checked={f.categories.includes(c.handle)}
+                          onChange={(e) =>
+                            set("categories", e.target.checked ? [...f.categories, c.handle] : f.categories.filter((h) => h !== c.handle))
+                          }
+                        />
+                        {c.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 
