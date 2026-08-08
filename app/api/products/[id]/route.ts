@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { productPricing } from "@/lib/cards";
 import { normalizeContent } from "@/lib/products";
+import { getLocale } from "@/lib/i18n";
+import { DEFAULT_LOCALE } from "@/lib/i18n/config";
+import { localizeMany } from "@/lib/i18n/translations";
 
 type Colour = { name: string; hex: string; image: string; hover: string; stock?: number | null; sizeStock?: Record<string, number | null> };
 
@@ -69,7 +72,7 @@ export async function GET(
     };
   });
 
-  return Response.json({
+  const payload = {
     id: product.id,
     slug: product.slug,
     title: product.title,
@@ -91,5 +94,81 @@ export async function GET(
     sizes,
     content,
     related,
+  };
+
+  return Response.json(await localizeProduct(payload, await getLocale()));
+}
+
+type LocalizableProduct = {
+  title: string;
+  description: string;
+  productType: string;
+  badge: string | null;
+  colours: Colour[];
+  related: { title: string; [k: string]: unknown }[];
+  content: ReturnType<typeof normalizeContent>;
+};
+
+// Translate every text field of the product detail for the caller's language in
+// one batched pass (title, description, type, colour names, related titles, and
+// all rich-content copy). Prices/images/ids are untouched. Base locale → no-op.
+async function localizeProduct<T extends LocalizableProduct>(
+  payload: T,
+  locale: string
+): Promise<T> {
+  if (locale === DEFAULT_LOCALE) return payload;
+  const c = payload.content;
+
+  const sources: string[] = [
+    payload.title,
+    payload.description,
+    payload.productType ?? "",
+    payload.badge ?? "",
+    ...payload.colours.map((x) => x.name),
+    ...payload.related.map((x) => x.title),
+    ...c.materialMatters.map((x) => x.label),
+    ...c.accordions.flatMap((x) => [x.title, x.body]),
+    c.keyFeatures.intro,
+    ...c.keyFeatures.items.flatMap((x) => [x.title, x.desc]),
+    ...c.whyYouLoveIt.items.flatMap((x) => [x.title, x.desc]),
+    ...c.stylingTips.tips,
+    c.stylingTips.closing,
+    c.behindTheSeams.description,
+  ];
+
+  const translated = await localizeMany(sources, locale);
+  const map = new Map<string, string>();
+  sources.forEach((s, i) => {
+    if (s) map.set(s, translated[i]);
   });
+  const tr = (s: string) => (s ? map.get(s) ?? s : s);
+
+  payload.title = tr(payload.title);
+  payload.description = tr(payload.description);
+  if (payload.productType) payload.productType = tr(payload.productType);
+  if (payload.badge) payload.badge = tr(payload.badge);
+  payload.colours = payload.colours.map((x) => ({ ...x, name: tr(x.name) }));
+  payload.related = payload.related.map((x) => ({ ...x, title: tr(x.title) }));
+  payload.content = {
+    ...c,
+    materialMatters: c.materialMatters.map((x) => ({ ...x, label: tr(x.label) })),
+    accordions: c.accordions.map((x) => ({ ...x, title: tr(x.title), body: tr(x.body) })),
+    keyFeatures: {
+      ...c.keyFeatures,
+      intro: tr(c.keyFeatures.intro),
+      items: c.keyFeatures.items.map((x) => ({ ...x, title: tr(x.title), desc: tr(x.desc) })),
+    },
+    whyYouLoveIt: {
+      ...c.whyYouLoveIt,
+      items: c.whyYouLoveIt.items.map((x) => ({ ...x, title: tr(x.title), desc: tr(x.desc) })),
+    },
+    stylingTips: {
+      ...c.stylingTips,
+      tips: c.stylingTips.tips.map(tr),
+      closing: tr(c.stylingTips.closing),
+    },
+    behindTheSeams: { ...c.behindTheSeams, description: tr(c.behindTheSeams.description) },
+  };
+
+  return payload;
 }

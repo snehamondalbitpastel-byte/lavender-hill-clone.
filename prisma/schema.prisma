@@ -361,3 +361,22 @@ model HeroSlide {
   active    Boolean  @default(true) // show/hide without deleting
   createdAt DateTime @default(now())
 }
+
+// Machine-translation cache for storefront content (product names/descriptions,
+// category + hero + marketing text, shop-grid titles). Keyed by locale + a hash
+// of the English source, so it survives card regeneration and is shared across
+// records with identical text. Auto-filled on demand (translateBatch) and
+// admin-editable. `edited` marks a human fine-tune so "re-translate all" won't
+// overwrite it. This ADDS a table — it never touches existing tables/data.
+model Translation {
+  id        Int      @id @default(autoincrement())
+  locale    String
+  sourceKey String // sha256(source) hex — stable + index-safe
+  source    String // the original English text (for admin display)
+  value     String // the translated text
+  edited    Boolean  @default(false) // admin fine-tuned → keep on re-translate
+  createdAt DateTime @default(now())
+
+  @@unique([locale, sourceKey])
+  @@index([locale])
+}
