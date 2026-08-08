@@ -10,12 +10,20 @@ import {
   CartIcon,
   MenuIcon,
   CloseIcon,
-  ChevronDown,
 } from "./Icons";
 import LocalizationSelector from "./LocalizationSelector";
+import LanguageSelector from "./LanguageSelector";
 import { useCart } from "./CartProvider";
+import { useT } from "./LocaleProvider";
 
 const NAV = ["New In", "Shop", "Sale", "About"];
+// Nav label → dictionary key (so the menu translates with the site language).
+const NAV_KEY: Record<string, string> = {
+  "New In": "nav.new_in",
+  Shop: "nav.shop",
+  Sale: "nav.sale",
+  About: "nav.about",
+};
 
 // Place the sliding bar BEFORE the browser paints (on the client) so it appears
 // directly under the active tab — never sliding in from the left edge on load.
@@ -38,6 +46,7 @@ function hrefFor(item: string): string {
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { openCart, count } = useCart();
+  const { t } = useT();
   const pathname = usePathname();
   // A tab is "active" when the current URL is that page (or a sub-page of it).
   const isActive = (href: string) =>
@@ -101,7 +110,7 @@ export default function Header() {
                     active ? "text-espresso font-medium" : "text-espresso/70 hover:text-espresso"
                   }`}
                 >
-                  {item}
+                  {t(NAV_KEY[item], item)}
                 </Link>
               );
             })}
@@ -116,9 +125,9 @@ export default function Header() {
           {/* Right: locale + account + icons */}
           <div className="flex flex-1 items-center justify-end gap-4 md:gap-5">
             <LocalizationSelector />
-            <button className="hidden lg:flex items-center gap-1 nav-link-lh text-[12px] text-espresso/70 ml-6">
-              English <ChevronDown className="w-4.5 h-4.5" />
-            </button>
+            <div className="ml-6">
+              <LanguageSelector />
+            </div>
             <a
               href={LOGIN_HREF}
               className="hidden md:block ml-2 hover:text-taupe transition-colors"
@@ -177,7 +186,7 @@ export default function Header() {
                         : "text-espresso/70"
                     }`}
                   >
-                    {item}
+                    {t(NAV_KEY[item], item)}
                   </a>
                 );
               })}

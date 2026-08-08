@@ -4,12 +4,14 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useCart, bundleFor, type CartItem } from "./CartProvider";
 import { useCurrency } from "./CurrencyProvider";
+import { useT } from "./LocaleProvider";
 
 type Offer = { code: string; off: string; min: number };
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, subtotal, setQty, remove, note, setNote } = useCart();
   const { money } = useCurrency();
+  const { t } = useT();
   const [noteOpen, setNoteOpen] = useState(false);
 
   // Live offers (admin-featured coupons) — shown as static "Shop ₹X & above →
@@ -53,7 +55,7 @@ export default function CartDrawer() {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-line px-6 py-[1.125rem] md:px-8">
           <span className="font-heading text-base font-light uppercase tracking-[0.2em] text-espresso">
-            Cart
+            {t("cart.title", "Cart")}
           </span>
           <button type="button" onClick={closeCart} aria-label="Close" className="text-espresso/60 hover:text-espresso">
             <svg width="16" viewBox="0 0 16 16" fill="none"><path d="m1 1 14 14M1 15 15 1" stroke="currentColor" strokeWidth="1.5" /></svg>
@@ -62,8 +64,8 @@ export default function CartDrawer() {
 
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-            <p className="text-espresso/60">Your cart is empty.</p>
-            <a href="/shop" onClick={closeCart} className="btn-lh">Continue shopping</a>
+            <p className="text-espresso/60">{t("cart.empty", "Your cart is empty.")}</p>
+            <a href="/shop" onClick={closeCart} className="btn-lh">{t("cart.continue", "Continue shopping")}</a>
           </div>
         ) : (
           <>
@@ -73,21 +75,21 @@ export default function CartDrawer() {
                   subdued text, full-drawer-width with a bottom divider. Shipping
                   is always free, so the customer is always eligible. */}
               <p className="-mx-6 border-b border-line px-6 py-2 text-sm text-espresso/65 md:-mx-8 md:px-8">
-                You are eligible for free shipping.
+                {t("cart.free_shipping", "You are eligible for free shipping.")}
               </p>
 
               {/* Offer — teaser for the SINGLE nearest offer NOT yet unlocked (no code
                   shown). Once the cart meets its minimum, it moves to checkout with its code. */}
               {nextOffer && (
                 <div className="mb-4 rounded-md border border-dashed border-[#c9c4bd] bg-[#faf9f7] p-3">
-                  <p className="mb-1.5 text-[0.68rem] font-medium uppercase tracking-[0.12em] text-espresso/55">Offers</p>
+                  <p className="mb-1.5 text-[0.68rem] font-medium uppercase tracking-[0.12em] text-espresso/55">{t("cart.offers", "Offers")}</p>
                   <ul className="flex flex-col gap-1">
                     <li className="flex items-start gap-1.5 text-[0.8rem] text-espresso/75">
                       <span aria-hidden="true">🎟</span>
-                      <span>Shop <b className="text-espresso">{money(nextOffer.min)}</b> &amp; above → {nextOffer.off}</span>
+                      <span>{t("cart.shop_above", "Shop")} <b className="text-espresso">{money(nextOffer.min)}</b> {t("cart.and_above", "& above")} → {nextOffer.off}</span>
                     </li>
                   </ul>
-                  <p className="mt-1.5 text-[0.68rem] text-espresso/45">Unlock it, then apply your code at checkout.</p>
+                  <p className="mt-1.5 text-[0.68rem] text-espresso/45">{t("cart.unlock_hint", "Unlock it, then apply your code at checkout.")}</p>
                 </div>
               )}
 
@@ -105,7 +107,7 @@ export default function CartDrawer() {
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="Add a note to your order…"
+                  placeholder={t("cart.note_placeholder", "Add a note to your order…")}
                   className="mb-4 min-h-[70px] w-full resize-y rounded-md border border-line bg-white px-3 py-2 text-sm text-espresso outline-none focus:border-espresso"
                 />
               ) : (
@@ -114,12 +116,12 @@ export default function CartDrawer() {
                   onClick={() => setNoteOpen(true)}
                   className="mb-4 text-sm text-espresso link-underline-anim"
                 >
-                  Add order note
+                  {t("cart.add_note", "Add order note")}
                 </button>
               )}
 
               <p className="mb-4 text-[0.8125rem] text-espresso/55">
-                Taxes and shipping calculated at checkout
+                {t("cart.taxes_note", "Taxes and shipping calculated at checkout")}
               </p>
 
               <a
@@ -127,7 +129,7 @@ export default function CartDrawer() {
                 onClick={closeCart}
                 className="btn-lh w-full justify-between"
               >
-                <span>Checkout</span>
+                <span>{t("cart.checkout", "Checkout")}</span>
                 <span className="tabular-nums">{money(subtotal)}</span>
               </a>
             </div>
@@ -150,6 +152,7 @@ function Line({
   onNavigate: () => void;
 }) {
   const { money } = useCurrency();
+  const { t } = useT();
   const onSale = item.compareAt != null && item.compareAt > item.price;
   const discount = bundleFor(item);
   const variant = [item.colour, item.size].filter(Boolean).join(" / ");
@@ -212,7 +215,7 @@ function Line({
             onClick={() => onRemove(item.key)}
             className="text-sm text-espresso/60 hover:text-espresso link-underline-anim"
           >
-            Remove
+            {t("cart.remove", "Remove")}
           </button>
         </div>
 
@@ -222,7 +225,7 @@ function Line({
           <div className="mt-2 flex flex-wrap gap-1.5">
             {onSale && (
               <span className="badge-lh badge-lh--sale">
-                Save {money((item.compareAt as number) - item.price)}
+                {t("cart.save", "Save")} {money((item.compareAt as number) - item.price)}
               </span>
             )}
             {item.badge && (

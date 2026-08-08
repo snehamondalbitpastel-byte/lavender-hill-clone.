@@ -5,6 +5,8 @@ import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
 import CartProvider from "./components/CartProvider";
 import { CurrencyProvider } from "./components/CurrencyProvider";
+import { LocaleProvider } from "./components/LocaleProvider";
+import { getLocale, getDictionary } from "@/lib/i18n";
 
 // Headings — matches the site's --heading-font-family: Raleway
 const raleway = Raleway({
@@ -27,15 +29,19 @@ export const metadata: Metadata = {
     "A practice clone built with Next.js + Tailwind CSS. Beautiful basics for every woman's wardrobe.",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const locale = await getLocale();
+  const dict = await getDictionary(locale);
   return (
     <html
-      lang="en"
+      lang={locale}
       className={`${raleway.variable} ${tenorSans.variable} h-full`}
     >
       <body className="min-h-full flex flex-col bg-cream text-espresso antialiased">
         <CurrencyProvider>
-          <CartProvider>{children}</CartProvider>
+          <LocaleProvider locale={locale} dict={dict}>
+            <CartProvider>{children}</CartProvider>
+          </LocaleProvider>
         </CurrencyProvider>
       </body>
     </html>
