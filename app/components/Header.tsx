@@ -81,7 +81,7 @@ export default function Header() {
             >
               <MenuIcon />
             </button>
-            <a href="#" aria-label="Lavender Hill — Home" className="inline-block">
+            <Link href="/" aria-label="Lavender Hill — Home" className="inline-block">
               <Image
                 src="/lavender-hill-logo.png"
                 alt="Lavender Hill"
@@ -91,7 +91,7 @@ export default function Header() {
                 priority
                 className="h-auto w-[115px] md:w-[156px]"
               />
-            </a>
+            </Link>
           </div>
 
           {/* Center: nav — full-height links so the sliding chocolate bar sits
