@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useFetch } from "@/hooks/useFetch";
 import { getProduct, type ProductFull } from "@/lib/api";
 import { useCart, parseRs } from "./CartProvider";
+import { useCurrency } from "./CurrencyProvider";
 import { maxQtyFor, MAX_PER_ORDER, variantStockOf, colourSoldOutOf } from "@/lib/inventory";
 
 // ============================================================
@@ -252,6 +253,7 @@ export default function ProductDetail({ id }: { id: string }) {
   }, []);
 
   const cart = useCart();
+  const { localize } = useCurrency();
 
   async function addToCart() {
     if (!product || checking) return;
@@ -485,11 +487,11 @@ export default function ProductDetail({ id }: { id: string }) {
               <p className="text-base uppercase tracking-[0.05em] text-espresso/55 [font-family:var(--font-heading)]">
                 {product.compareAtPrice && product.saveBadge ? (
                   <>
-                    <s className="mr-2 text-espresso/35">{product.compareAtPrice}</s>
-                    <span className="text-plum">{product.price}</span>
+                    <s className="mr-2 text-espresso/35">{localize(product.compareAtPrice)}</s>
+                    <span className="text-plum">{localize(product.price)}</span>
                   </>
                 ) : (
-                  product.price
+                  localize(product.price)
                 )}
               </p>
             </div>
@@ -498,7 +500,7 @@ export default function ProductDetail({ id }: { id: string }) {
             {(product.saveBadge || product.badge) && (
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {product.saveBadge && (
-                  <span className="badge-lh badge-lh--sale">{product.saveBadge}</span>
+                  <span className="badge-lh badge-lh--sale">{localize(product.saveBadge)}</span>
                 )}
                 {product.badge && <span className="badge-lh">{product.badge}</span>}
               </div>
@@ -809,11 +811,11 @@ export default function ProductDetail({ id }: { id: string }) {
                         <p className="mt-1.5 text-sm text-espresso/55">
                           {p.saveBadge && p.compareAt ? (
                             <>
-                              <span className="text-plum">{p.price}</span>{" "}
-                              <s className="line-through">{p.compareAt}</s>
+                              <span className="text-plum">{localize(p.price)}</span>{" "}
+                              <s className="line-through">{localize(p.compareAt)}</s>
                             </>
                           ) : (
-                            p.price
+                            localize(p.price)
                           )}
                         </p>
                       </div>

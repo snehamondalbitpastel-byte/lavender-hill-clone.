@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Raleway, Tenor_Sans } from "next/font/google";
 import "./globals.css";
+import "flag-icons/css/flag-icons.min.css";
 import CartProvider from "./components/CartProvider";
+import { CurrencyProvider } from "./components/CurrencyProvider";
 
 // Headings — matches the site's --heading-font-family: Raleway
 const raleway = Raleway({
@@ -32,7 +34,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${raleway.variable} ${tenorSans.variable} h-full`}
     >
       <body className="min-h-full flex flex-col bg-cream text-espresso antialiased">
-        <CartProvider>{children}</CartProvider>
+        <CurrencyProvider>
+          <CartProvider>{children}</CartProvider>
+        </CurrencyProvider>
       </body>
     </html>
   );

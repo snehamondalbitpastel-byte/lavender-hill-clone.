@@ -2,12 +2,14 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useCart, formatRs, bundleFor, type CartItem } from "./CartProvider";
+import { useCart, bundleFor, type CartItem } from "./CartProvider";
+import { useCurrency } from "./CurrencyProvider";
 
 type Offer = { code: string; off: string; min: number };
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, subtotal, setQty, remove, note, setNote } = useCart();
+  const { money } = useCurrency();
   const [noteOpen, setNoteOpen] = useState(false);
 
   // Live offers (admin-featured coupons) — shown as static "Shop ₹X & above →
@@ -82,7 +84,7 @@ export default function CartDrawer() {
                   <ul className="flex flex-col gap-1">
                     <li className="flex items-start gap-1.5 text-[0.8rem] text-espresso/75">
                       <span aria-hidden="true">🎟</span>
-                      <span>Shop <b className="text-espresso">₹{nextOffer.min.toLocaleString("en-IN")}</b> &amp; above → {nextOffer.off}</span>
+                      <span>Shop <b className="text-espresso">{money(nextOffer.min)}</b> &amp; above → {nextOffer.off}</span>
                     </li>
                   </ul>
                   <p className="mt-1.5 text-[0.68rem] text-espresso/45">Unlock it, then apply your code at checkout.</p>
@@ -126,7 +128,7 @@ export default function CartDrawer() {
                 className="btn-lh w-full justify-between"
               >
                 <span>Checkout</span>
-                <span className="tabular-nums">{formatRs(subtotal)}</span>
+                <span className="tabular-nums">{money(subtotal)}</span>
               </a>
             </div>
           </>
@@ -147,6 +149,7 @@ function Line({
   onRemove: (key: string) => void;
   onNavigate: () => void;
 }) {
+  const { money } = useCurrency();
   const onSale = item.compareAt != null && item.compareAt > item.price;
   const discount = bundleFor(item);
   const variant = [item.colour, item.size].filter(Boolean).join(" / ");
@@ -171,11 +174,11 @@ function Line({
         <p className="mt-1 text-sm text-espresso/80">
           {onSale ? (
             <>
-              <span className="text-plum">{formatRs(item.price)}</span>{" "}
-              <s className="text-espresso/40">{formatRs(item.compareAt as number)}</s>
+              <span className="text-plum">{money(item.price)}</span>{" "}
+              <s className="text-espresso/40">{money(item.compareAt as number)}</s>
             </>
           ) : (
-            formatRs(item.price)
+            money(item.price)
           )}
         </p>
 
@@ -219,13 +222,13 @@ function Line({
           <div className="mt-2 flex flex-wrap gap-1.5">
             {onSale && (
               <span className="badge-lh badge-lh--sale">
-                Save {formatRs((item.compareAt as number) - item.price)}
+                Save {money((item.compareAt as number) - item.price)}
               </span>
             )}
             {item.badge && (
               <span className="badge-lh">
                 {item.badge}
-                {discount > 0 ? ` (−${formatRs(discount)})` : ""}
+                {discount > 0 ? ` (−${money(discount)})` : ""}
               </span>
             )}
           </div>

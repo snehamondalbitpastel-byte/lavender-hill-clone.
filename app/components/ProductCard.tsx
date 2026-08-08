@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { getProduct, type Product, type Card } from "@/lib/api";
 import { useCart, parseRs } from "./CartProvider";
+import { useCurrency } from "./CurrencyProvider";
 import { variantStockOf } from "@/lib/inventory";
 
 // Shared product card — used by the homepage "Bestsellers" and the shop page.
@@ -69,6 +70,7 @@ function Rating({ rating, reviews }: { rating: number; reviews: number }) {
 // — both share the fields the card renders.
 export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | Card; sizeHint?: string; colourHint?: string }) {
   const cart = useCart();
+  const { localize } = useCurrency();
   const [busy, setBusy] = useState(false);
   const slug = "productSlug" in p ? p.productSlug : p.slug;
 
@@ -123,7 +125,7 @@ export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | 
           if (!save && !p.badge) return null;
           return (
             <div className="badge-list-lh">
-              {save && <span className="badge-lh badge-lh--sale">{save}</span>}
+              {save && <span className="badge-lh badge-lh--sale">{localize(save)}</span>}
               {p.badge && <span className="badge-lh">{p.badge}</span>}
             </div>
           );
@@ -173,11 +175,11 @@ export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | 
             <p className="text-sm text-espresso/60">
               {compareAt ? (
                 <>
-                  <s className="text-espresso/40">{compareAt}</s>{" "}
-                  <span className="text-plum">{p.price}</span>
+                  <s className="text-espresso/40">{localize(compareAt)}</s>{" "}
+                  <span className="text-plum">{localize(p.price)}</span>
                 </>
               ) : (
-                p.price
+                localize(p.price)
               )}
             </p>
           );
