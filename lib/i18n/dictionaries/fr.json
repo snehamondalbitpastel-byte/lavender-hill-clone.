@@ -24,5 +24,6 @@
   "product.add_to_cart": "Ajouter au panier",
   "search.placeholder": "Rechercher...",
   "search.searching": "Recherche…",
-  "search.no_results": "Aucun résultat trouvé"
+  "search.no_results": "Aucun résultat n'a pu être trouvé. Veuillez réessayer avec une requête différente.",
+  "search.clear_all": "Tout effacer"
 }

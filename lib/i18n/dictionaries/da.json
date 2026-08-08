@@ -24,5 +24,6 @@
   "product.add_to_cart": "Tilføj til kurv",
   "search.placeholder": "Søg efter...",
   "search.searching": "Søger...",
-  "search.no_results": "Ingen resultater fundet"
+  "search.no_results": "Der kunne ikke findes nogen resultater. Prøv venligst igen med en anden forespørgsel.",
+  "search.clear_all": "Ryd alle"
 }

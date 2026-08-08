@@ -1,24 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
-import { useCurrency } from "./CurrencyProvider";
 import { useT } from "./LocaleProvider";
+import ProductCard from "./ProductCard";
+import { type Card } from "@/lib/api";
 
 // Header search. The trigger uses the theme's exact search glyph; clicking it
 // slides a full-width panel down from under the header. Typing runs a debounced
-// predictive search (/api/search) with two tabs — Products & Collections. The
-// results grid is a fixed 4-up row with its own limited height + inner scroll;
-// a "View all results" button links to the full /search page.
+// predictive search (/api/search) with two tabs — Products & Collections. Product
+// results render the FULL shop card (image, name, price, colour swatches, rating).
+// The results area has a limited height + inner scroll; the "View all results"
+// button lives INSIDE that scroll (not a fixed footer).
 
-type Product = { slug: string; title: string; image: string; price: string; compareAt: string | null };
 type Collection = { handle: string; label: string };
-type Results = { products: Product[]; collections: Collection[] };
-
+type Results = { products: Card[]; collections: Collection[] };
 const EMPTY: Results = { products: [], collections: [] };
 
 export default function SearchBox() {
-  const { localize } = useCurrency();
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -32,7 +30,6 @@ export default function SearchBox() {
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  // Debounced predictive search.
   useEffect(() => {
     if (!open) return;
     const query = q.trim();
@@ -55,7 +52,6 @@ export default function SearchBox() {
     return () => clearTimeout(id);
   }, [q, open]);
 
-  // Close on outside click or Escape.
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
@@ -68,6 +64,12 @@ export default function SearchBox() {
       document.removeEventListener("keydown", onKey);
     };
   }, []);
+
+  function clearAll() {
+    setQ("");
+    setResults(EMPTY);
+    inputRef.current?.focus();
+  }
 
   const query = q.trim();
   const productCount = results.products.length;
@@ -104,7 +106,7 @@ export default function SearchBox() {
         }`}
       >
         <div className="w-full px-4 py-4 md:px-12 lg:px-[53px]">
-          {/* Form control — glyph + input + close ✕ (left-aligned, no underline) */}
+          {/* Form control — glyph + input + Clear all + close ✕ */}
           <div className="flex items-center gap-3">
             <svg aria-hidden="true" fill="none" focusable="false" width={20} viewBox="0 0 24 24" className="icon icon-search block shrink-0 text-espresso/70">
               <path d="M10.364 3a7.364 7.364 0 1 0 0 14.727 7.364 7.364 0 0 0 0-14.727Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" />
@@ -119,8 +121,18 @@ export default function SearchBox() {
               onChange={(e) => setQ(e.target.value)}
               aria-label={t("header.search", "Search")}
               placeholder={t("search.placeholder", "Search for...")}
-              className="min-w-0 flex-1 border-0 bg-transparent font-heading font-light uppercase tracking-[0.18em] leading-[1.6] text-[0.9625rem] sm:text-[1.2375rem] text-espresso placeholder:text-espresso/40 focus:outline-none"
+              className="min-w-0 flex-1 border-0 bg-transparent font-heading font-light uppercase tracking-[0.18em] leading-[1.6] text-[0.9625rem] sm:text-[1.2375rem] text-espresso placeholder:text-espresso/40 focus:outline-none [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-cancel-button]:hidden"
             />
+            {/* Clear all — replaces the browser's native clear ✕ */}
+            {q && (
+              <button
+                type="button"
+                onClick={clearAll}
+                className="shrink-0 text-sm text-espresso underline underline-offset-4 hover:text-taupe transition-colors"
+              >
+                {t("search.clear_all", "Clear all")}
+              </button>
+            )}
             <button type="button" onClick={() => setOpen(false)} className="shrink-0 text-espresso/70 transition-colors hover:text-espresso">
               <span className="sr-only">Close</span>
               <svg aria-hidden="true" focusable="false" fill="none" width={16} viewBox="0 0 16 16" className="icon icon-close block">
@@ -135,7 +147,9 @@ export default function SearchBox() {
               {loading && <p className="py-8 text-center text-sm text-espresso/45">{t("search.searching", "Searching…")}</p>}
 
               {!loading && productCount === 0 && collectionCount === 0 && (
-                <p className="py-8 text-center text-sm text-espresso/45">{t("search.no_results", "No results found")}</p>
+                <p className="py-8 text-center text-sm text-espresso/45">
+                  {t("search.no_results", "No results could be found. Please try again with a different query.")}
+                </p>
               )}
 
               {!loading && (productCount > 0 || collectionCount > 0) && (
@@ -150,37 +164,34 @@ export default function SearchBox() {
                     </button>
                   </div>
 
-                  {/* Limited-height, inner-scrolling results area */}
-                  <div className="mt-5 max-h-[52vh] overflow-y-auto pr-1">
+                  {/* Limited-height, inner-scrolling area — the "View all results"
+                      button lives INSIDE it, so it appears as you scroll down. */}
+                  <div className="mt-5 max-h-[66vh] overflow-y-auto pr-1">
                     {tab === "products" ? (
                       productCount === 0 ? (
-                        <p className="py-8 text-center text-sm text-espresso/45">{t("search.no_results", "No results found")}</p>
+                        <p className="py-8 text-center text-sm text-espresso/45">
+                          {t("search.no_results", "No results could be found. Please try again with a different query.")}
+                        </p>
                       ) : (
-                        <ul className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
-                          {results.products.map((p) => (
-                            <li key={p.slug}>
-                              <a href={`/products/${p.slug}`} onClick={() => setOpen(false)} className="group block">
-                                <span className="relative block aspect-[2/3] overflow-hidden bg-white">
-                                  <Image src={p.image} alt={p.title} fill sizes="(max-width:640px) 45vw, 22vw" className="object-cover transition-opacity duration-300 group-hover:opacity-90" />
-                                </span>
-                                <span className="mt-2 block text-sm text-espresso group-hover:text-taupe">{p.title}</span>
-                                <span className="block text-sm text-espresso/60">
-                                  {p.compareAt ? (
-                                    <>
-                                      <span className="text-plum">{localize(p.price)}</span>{" "}
-                                      <s className="text-espresso/40">{localize(p.compareAt)}</s>
-                                    </>
-                                  ) : (
-                                    localize(p.price)
-                                  )}
-                                </span>
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
+                        <>
+                          <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+                            {results.products.map((p) => (
+                              <li key={p.id}>
+                                <ProductCard p={p} colourHint={p.colour ?? undefined} />
+                              </li>
+                            ))}
+                          </ul>
+                          <div className="mt-8 mb-2 text-center">
+                            <a href={`/search?q=${encodeURIComponent(query)}`} onClick={() => setOpen(false)} className="btn-lh">
+                              View all results
+                            </a>
+                          </div>
+                        </>
                       )
                     ) : collectionCount === 0 ? (
-                      <p className="py-8 text-center text-sm text-espresso/45">{t("search.no_results", "No results found")}</p>
+                      <p className="py-8 text-center text-sm text-espresso/45">
+                        {t("search.no_results", "No results could be found. Please try again with a different query.")}
+                      </p>
                     ) : (
                       <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                         {results.collections.map((c) => (
@@ -198,19 +209,6 @@ export default function SearchBox() {
                       </ul>
                     )}
                   </div>
-
-                  {/* View all results */}
-                  {activeCount > 0 && (
-                    <div className="mt-5 text-center">
-                      <a
-                        href={tab === "products" ? `/search?q=${encodeURIComponent(query)}` : "/collections/view-all-products"}
-                        onClick={() => setOpen(false)}
-                        className="btn-lh"
-                      >
-                        View all results
-                      </a>
-                    </div>
-                  )}
                 </>
               )}
             </div>

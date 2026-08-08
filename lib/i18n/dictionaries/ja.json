@@ -24,5 +24,6 @@
   "product.add_to_cart": "カートに追加",
   "search.placeholder": "検索する...",
   "search.searching": "検索中…",
-  "search.no_results": "結果が見つかりませんでした"
+  "search.no_results": "結果が見つかりませんでした。別のクエリで再試行してください。",
+  "search.clear_all": "すべてクリア"
 }

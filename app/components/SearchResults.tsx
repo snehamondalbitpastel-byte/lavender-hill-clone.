@@ -2,19 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Image from "next/image";
-import { useCurrency } from "./CurrencyProvider";
+import ProductCard from "./ProductCard";
+import { type Card } from "@/lib/api";
 
 // Full "View all results" page grid — reads ?q= and lists every matching product
-// (up to 48). Prices localize to the chosen currency, like the rest of the store.
-
-type Product = { slug: string; title: string; image: string; price: string; compareAt: string | null };
+// (up to 48) as full shop cards (swatches + rating + price, currency-aware).
 
 export default function SearchResults() {
   const params = useSearchParams();
   const q = (params.get("q") || "").trim();
-  const { localize } = useCurrency();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,27 +46,14 @@ export default function SearchResults() {
       {loading ? (
         <p className="py-16 text-center text-sm text-espresso/45">Searching…</p>
       ) : products.length === 0 ? (
-        <p className="py-16 text-center text-sm text-espresso/45">No products found.</p>
+        <p className="py-16 text-center text-sm text-espresso/45">
+          No results could be found. Please try again with a different query.
+        </p>
       ) : (
         <ul className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:grid-cols-4 md:gap-x-6">
           {products.map((p) => (
-            <li key={p.slug}>
-              <a href={`/products/${p.slug}`} className="group block">
-                <span className="relative block aspect-[2/3] overflow-hidden bg-white">
-                  <Image src={p.image} alt={p.title} fill sizes="(max-width:640px) 45vw, 22vw" className="object-cover transition-opacity duration-300 group-hover:opacity-90" />
-                </span>
-                <span className="mt-3 block text-center text-sm text-espresso group-hover:text-taupe">{p.title}</span>
-                <span className="block text-center text-sm text-espresso/60">
-                  {p.compareAt ? (
-                    <>
-                      <span className="text-plum">{localize(p.price)}</span>{" "}
-                      <s className="text-espresso/40">{localize(p.compareAt)}</s>
-                    </>
-                  ) : (
-                    localize(p.price)
-                  )}
-                </span>
-              </a>
+            <li key={p.id}>
+              <ProductCard p={p} colourHint={p.colour ?? undefined} />
             </li>
           ))}
         </ul>

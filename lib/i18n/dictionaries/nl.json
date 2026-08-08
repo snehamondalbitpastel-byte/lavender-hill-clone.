@@ -24,5 +24,6 @@
   "product.add_to_cart": "Voeg toe aan winkelwagen",
   "search.placeholder": "Zoeken naar...",
   "search.searching": "Zoeken…",
-  "search.no_results": "Geen resultaten gevonden"
+  "search.no_results": "Er konden geen resultaten gevonden worden. Probeer het opnieuw met een andere vraag.",
+  "search.clear_all": "Alles wissen"
 }

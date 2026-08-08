@@ -24,5 +24,6 @@
   "product.add_to_cart": "In den Warenkorb legen",
   "search.placeholder": "Suchen nach...",
   "search.searching": "Suche...",
-  "search.no_results": "Keine Ergebnisse gefunden"
+  "search.no_results": "Es konnten keine Ergebnisse gefunden werden. Bitte versuchen Sie es erneut mit einer anderen Abfrage.",
+  "search.clear_all": "Alles löschen"
 }

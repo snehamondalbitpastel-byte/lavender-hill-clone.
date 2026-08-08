@@ -24,5 +24,6 @@
   "product.add_to_cart": "Lägg till i varukorgen",
   "search.placeholder": "Leta efter...",
   "search.searching": "Sökande…",
-  "search.no_results": "Inga resultat hittades"
+  "search.no_results": "Inga resultat kunde hittas. Försök igen med en annan fråga.",
+  "search.clear_all": "Rensa alla"
 }
