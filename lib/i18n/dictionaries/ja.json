@@ -22,7 +22,7 @@
   "cart.remove": "取り除く",
   "cart.save": "保存",
   "product.add_to_cart": "カートに追加",
-  "search.placeholder": "当店を検索",
+  "search.placeholder": "検索する...",
   "search.searching": "検索中…",
   "search.no_results": "結果が見つかりませんでした"
 }

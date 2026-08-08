@@ -22,7 +22,7 @@
   "cart.remove": "Retirer",
   "cart.save": "Sauvegarder",
   "product.add_to_cart": "Ajouter au panier",
-  "search.placeholder": "Rechercher notre magasin",
+  "search.placeholder": "Rechercher...",
   "search.searching": "Recherche…",
   "search.no_results": "Aucun résultat trouvé"
 }

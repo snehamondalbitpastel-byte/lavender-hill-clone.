@@ -22,7 +22,7 @@
   "cart.remove": "Remove",
   "cart.save": "Save",
   "product.add_to_cart": "Add to cart",
-  "search.placeholder": "Search our store",
+  "search.placeholder": "Search for...",
   "search.searching": "Searching…",
   "search.no_results": "No results found"
 }

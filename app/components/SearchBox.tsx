@@ -110,27 +110,47 @@ export default function SearchBox() {
         }`}
         style={{ maxHeight: "calc(100vh - var(--lh-header-h, 74px) - 1.25rem)" }}
       >
-        <div className="mx-auto w-full max-w-[71.875rem] px-4 py-6 md:px-12">
-          <label className="relative block">
-            <span className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-espresso/50">
-              <svg aria-hidden="true" fill="none" width={22} viewBox="0 0 24 24">
-                <path d="M10.364 3a7.364 7.364 0 1 0 0 14.727 7.364 7.364 0 0 0 0-14.727Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" />
-                <path d="M15.857 15.858 21 21.001" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" />
-              </svg>
-            </span>
+        <div className="w-full px-4 py-4 md:px-12 lg:px-[53px]">
+          {/* form control — search glyph + input + close ✕ (matches the theme's
+              header-search__form-control: left-aligned, no underline) */}
+          <div className="flex items-center gap-3">
+            <svg
+              aria-hidden="true"
+              fill="none"
+              focusable="false"
+              width={20}
+              viewBox="0 0 24 24"
+              className="icon icon-search block shrink-0 text-espresso/70"
+            >
+              <path d="M10.364 3a7.364 7.364 0 1 0 0 14.727 7.364 7.364 0 0 0 0-14.727Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" />
+              <path d="M15.857 15.858 21 21.001" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" />
+            </svg>
             <input
               ref={inputRef}
               type="search"
+              name="q"
+              spellCheck={false}
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder={t("search.placeholder", "Search our store")}
-              className="w-full border-b border-line bg-transparent py-3 pl-9 pr-4 text-base text-espresso placeholder:text-espresso/40 focus:border-espresso focus:outline-none"
+              aria-label={t("header.search", "Search")}
+              placeholder={t("search.placeholder", "Search for...")}
+              className="min-w-0 flex-1 border-0 bg-transparent font-heading text-lg uppercase tracking-[0.15em] text-espresso placeholder:text-espresso/40 focus:outline-none md:text-xl"
             />
-          </label>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="shrink-0 text-espresso/70 transition-colors hover:text-espresso"
+            >
+              <span className="sr-only">Close</span>
+              <svg aria-hidden="true" focusable="false" fill="none" width={16} viewBox="0 0 16 16" className="icon icon-close block">
+                <path d="m1 1 14 14M1 15 15 1" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+            </button>
+          </div>
 
           {/* Results */}
           {query.length >= 2 && (
-            <div className="mt-5">
+            <div className="mt-6">
               {loading && <p className="py-6 text-center text-sm text-espresso/45">{t("search.searching", "Searching…")}</p>}
               {!loading && results.length === 0 && (
                 <p className="py-6 text-center text-sm text-espresso/45">{t("search.no_results", "No results found")}</p>
