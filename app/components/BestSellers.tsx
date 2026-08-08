@@ -40,6 +40,11 @@ export default function BestSellers() {
                 <ProductCard key={p.id} p={p} colourHint={p.colour ?? undefined} />
               ))}
         </div>
+
+        {/* Shop here → the full Bestsellers collection page */}
+        <div className="mt-10 md:mt-14 text-center">
+          <a href="/collections/bestsellers" className="btn-lh">Shop here</a>
+        </div>
       </div>
     </section>
   );

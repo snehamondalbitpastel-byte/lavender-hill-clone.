@@ -8,6 +8,12 @@ export function normalizePage(v: unknown): string {
   return (PAGES as readonly string[]).includes(String(v)) ? String(v) : "shop";
 }
 
+// How a collection's product grid is filled. Unknown → "category".
+const SOURCES = ["category", "all", "new", "sale", "bestseller"] as const;
+export function normalizeSource(v: unknown): string {
+  return (SOURCES as readonly string[]).includes(String(v)) ? String(v) : "category";
+}
+
 // POST /api/admin/categories — create a category (optionally nested).
 export async function POST(request: Request) {
   if (!(await getAdmin())) {
@@ -36,8 +42,10 @@ export async function POST(request: Request) {
       parentId,
       order: (max._max.order ?? -1) + 1,
       page: normalizePage(body.page),
+      source: normalizeSource(body.source),
       heading: String(body.heading ?? "").trim(),
       description: String(body.description ?? "").trim(),
+      bottomDescription: String(body.bottomDescription ?? "").trim(),
     },
   });
   return Response.json({ ok: true, id: cat.id });

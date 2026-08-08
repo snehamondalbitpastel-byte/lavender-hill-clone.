@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getAdmin } from "@/lib/auth";
-import { normalizePage } from "../route";
+import { normalizePage, normalizeSource } from "../route";
 
 // PUT /api/admin/categories/[id] — rename / re-parent.
 export async function PUT(
@@ -24,8 +24,10 @@ export async function PUT(
       label,
       parentId,
       page: normalizePage(body.page),
+      source: normalizeSource(body.source),
       heading: String(body.heading ?? "").trim(),
       description: String(body.description ?? "").trim(),
+      bottomDescription: String(body.bottomDescription ?? "").trim(),
     },
   });
   return Response.json({ ok: true });

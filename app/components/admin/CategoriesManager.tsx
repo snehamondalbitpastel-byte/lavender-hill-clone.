@@ -12,6 +12,8 @@ type Cat = {
   parentId: number | null;
   heading: string;
   description: string;
+  bottomDescription: string;
+  source: string;
   page: string;
 };
 
@@ -26,6 +28,16 @@ const PAGE_OPTIONS: { value: string; label: string }[] = [
 const pageLabel = (v: string) =>
   PAGE_OPTIONS.find((p) => p.value === v)?.label ?? "Shop";
 
+// How this collection's product grid is filled (mirrors normalizeSource on the
+// server). "category" = products tagged with this collection's handle.
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: "category", label: "Products tagged in this collection" },
+  { value: "all", label: "All products (Shop)" },
+  { value: "new", label: "New In products" },
+  { value: "sale", label: "On-sale products" },
+  { value: "bestseller", label: "Bestseller products" },
+];
+
 const inputCls =
   "border border-line rounded-md px-3 py-2 text-sm bg-white text-espresso focus:outline-none focus:border-espresso transition-colors w-full";
 const labelCls = "text-[11px] uppercase tracking-[0.1em] text-espresso/55 mb-1 block";
@@ -38,7 +50,7 @@ export default function CategoriesManager({ categories }: { categories: Cat[] })
   const [busy, setBusy] = useState(false);
   const [pendingDel, setPendingDel] = useState<{ id: number; label: string; kids: number } | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
-  const [ed, setEd] = useState({ label: "", heading: "", parentId: "", description: "", page: "shop" });
+  const [ed, setEd] = useState({ label: "", heading: "", parentId: "", description: "", bottomDescription: "", source: "category", page: "shop" });
 
   const childrenOf = (pid: number | null) => categories.filter((c) => c.parentId === pid);
 
@@ -91,6 +103,8 @@ export default function CategoriesManager({ categories }: { categories: Cat[] })
       heading: c.heading ?? "",
       parentId: c.parentId ? String(c.parentId) : "",
       description: c.description ?? "",
+      bottomDescription: c.bottomDescription ?? "",
+      source: c.source ?? "category",
       page: c.page ?? "shop",
     });
   }
@@ -179,14 +193,26 @@ export default function CategoriesManager({ categories }: { categories: Cat[] })
               ))}
             </select>
           </div>
+          <div className="sm:col-span-2">
+            <label className={labelCls}>Products in this collection (source)</label>
+            <select className={inputCls} value={ed.source} onChange={(e) => setEd({ ...ed, source: e.target.value })}>
+              {SOURCE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
         <div>
           <label className={labelCls}>Banner heading <span className="normal-case text-espresso/40">(falls back to the name)</span></label>
           <input className={inputCls} value={ed.heading} onChange={(e) => setEd({ ...ed, heading: e.target.value })} placeholder="e.g. Luxury Women's T-shirts" />
         </div>
         <div>
-          <label className={labelCls}>Banner description</label>
+          <label className={labelCls}>Banner description <span className="normal-case text-espresso/40">(top — shown under the heading)</span></label>
           <textarea className={`${inputCls} min-h-[90px] resize-y`} value={ed.description} onChange={(e) => setEd({ ...ed, description: e.target.value })} placeholder="Shown under the heading on this collection's page…" />
+        </div>
+        <div>
+          <label className={labelCls}>Bottom description <span className="normal-case text-espresso/40">(optional — closing note after the products)</span></label>
+          <textarea className={`${inputCls} min-h-[90px] resize-y`} value={ed.bottomDescription} onChange={(e) => setEd({ ...ed, bottomDescription: e.target.value })} placeholder="Optional closing paragraph shown below the product grid…" />
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => save(c.id)} disabled={busy} className="text-xs font-medium text-white bg-espresso rounded-md px-4 py-2">Save</button>

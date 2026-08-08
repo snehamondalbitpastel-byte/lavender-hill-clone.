@@ -34,11 +34,12 @@ const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : use
 // clone), NOT the live Shopify account page.
 const LOGIN_HREF = "/authentication/login";
 
-// Where each nav item points. "About" is a placeholder page (coming soon).
+// Where each nav item points. New In / Shop / Sale are collections (like the live
+// site); the old /shop, /new-in, /sale routes still work and redirect here.
 function hrefFor(item: string): string {
-  return item === "New In" ? "/new-in"
-    : item === "Shop" ? "/shop"
-    : item === "Sale" ? "/sale"
+  return item === "New In" ? "/collections/new-arrivals"
+    : item === "Shop" ? "/collections/view-all-products"
+    : item === "Sale" ? "/collections/sale"
     : item === "About" ? "/about"
     : "#";
 }

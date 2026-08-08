@@ -264,13 +264,21 @@ model Card {
 // Product categories — a nested tree (parentId → self). Products reference a
 // category by its `handle`. Managed in the admin so categories aren't hardcoded.
 model Category {
-  id          Int        @id @default(autoincrement())
-  handle      String     @unique
-  label       String // short name shown in menus / tags
-  heading     String     @default("") // banner title (falls back to label)
-  description String     @default("") // banner description shown on the category page
+  id                Int        @id @default(autoincrement())
+  handle            String     @unique
+  label             String // short name shown in menus / tags / sub-tabs
+  heading           String     @default("") // banner title (falls back to label / parent)
+  description       String     @default("") // top banner description
+  bottomDescription String     @default("") // optional closing note under the product grid
+  // How this collection's product grid is filled:
+  //   category   → products tagged with this handle (default; the taxonomy)
+  //   all        → every product (the "Shop / All Products" collection)
+  //   new        → products flagged New In        (the "New Arrivals" collection)
+  //   sale       → products on sale               (the "Sale" collection)
+  //   bestseller → products flagged Bestseller    (the "Bestsellers" collection)
+  source      String     @default("category")
   order       Int        @default(0)
-  page        String     @default("shop") // listing page this category shows on: shop | new-in | sale
+  page        String     @default("shop") // legacy: listing page for filter tags: shop | new-in | sale
   parentId    Int?
   parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
   children    Category[] @relation("CategoryTree")

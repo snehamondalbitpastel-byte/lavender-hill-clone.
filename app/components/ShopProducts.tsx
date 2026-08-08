@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFetch } from "@/hooks/useFetch";
-import { getCards, getSaleCards, getNewInCards, type Card } from "@/lib/api";
+import { getCards, getSaleCards, getNewInCards, getBestsellerCards, type Card } from "@/lib/api";
 import ProductCard from "./ProductCard";
 import ProductCardSkeleton from "./ProductCardSkeleton";
 
@@ -71,13 +71,20 @@ export default function ShopProducts({
   category,
   saleOnly = false,
   newIn = false,
-}: { category?: string; saleOnly?: boolean; newIn?: boolean } = {}) {
-  // Sale + New In pages reuse this exact grid + filter, just fetching a
-  // different slice of cards (on-sale / new-in / a category). Same data-driven
-  // facets, live counts, and "Clear all" as the main shop — so every listing
-  // page filters identically.
+  bestseller = false,
+}: { category?: string; saleOnly?: boolean; newIn?: boolean; bestseller?: boolean } = {}) {
+  // Sale / New In / Bestseller / category collections all reuse this exact grid +
+  // filter, just fetching a different slice of cards. Same data-driven facets,
+  // live counts, and "Clear all" as the main shop — so every listing page filters
+  // identically.
   const { data, loading } = useFetch<Card[]>(() =>
-    newIn ? getNewInCards() : saleOnly ? getSaleCards() : getCards(category)
+    bestseller
+      ? getBestsellerCards()
+      : newIn
+        ? getNewInCards()
+        : saleOnly
+          ? getSaleCards()
+          : getCards(category)
   );
   const router = useRouter();
   const [sort, setSort] = useState<SortKey>("featured");
