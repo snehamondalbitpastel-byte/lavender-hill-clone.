@@ -6,13 +6,13 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   AccountIcon,
-  SearchIcon,
   CartIcon,
   MenuIcon,
   CloseIcon,
 } from "./Icons";
 import LocalizationSelector from "./LocalizationSelector";
 import LanguageSelector from "./LanguageSelector";
+import SearchBox from "./SearchBox";
 import { useCart } from "./CartProvider";
 import { useT } from "./LocaleProvider";
 
@@ -125,7 +125,9 @@ export default function Header() {
           {/* Right: locale + account + icons */}
           <div className="flex flex-1 items-center justify-end gap-4 md:gap-5">
             <LocalizationSelector />
-            <div className="ml-6">
+            {/* Search — sits between the currency and language selectors */}
+            <SearchBox />
+            <div className="lg:ml-6">
               <LanguageSelector />
             </div>
             <a
@@ -135,12 +137,6 @@ export default function Header() {
               <span className="sr-only">Login</span>
               <AccountIcon />
             </a>
-            <button
-              aria-label="Search"
-              className="hover:text-taupe transition-colors"
-            >
-              <SearchIcon />
-            </button>
             <button
               aria-label="Cart"
               onClick={openCart}

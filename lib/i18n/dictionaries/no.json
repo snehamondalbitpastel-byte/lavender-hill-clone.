@@ -21,5 +21,8 @@
   "cart.checkout": "Kasse",
   "cart.remove": "Fjerne",
   "cart.save": "Spare",
-  "product.add_to_cart": "Legg i handlekurv"
+  "product.add_to_cart": "Legg i handlekurv",
+  "search.placeholder": "Søk i butikken vår",
+  "search.searching": "Søker …",
+  "search.no_results": "Ingen resultater funnet"
 }

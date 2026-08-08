@@ -21,5 +21,8 @@
   "cart.checkout": "Kasse",
   "cart.remove": "Entfernen",
   "cart.save": "Speichern",
-  "product.add_to_cart": "In den Warenkorb legen"
+  "product.add_to_cart": "In den Warenkorb legen",
+  "search.placeholder": "Durchsuchen Sie unseren Shop",
+  "search.searching": "Suche...",
+  "search.no_results": "Keine Ergebnisse gefunden"
 }

@@ -21,5 +21,8 @@
   "cart.checkout": "Checkout",
   "cart.remove": "Remove",
   "cart.save": "Save",
-  "product.add_to_cart": "Add to cart"
+  "product.add_to_cart": "Add to cart",
+  "search.placeholder": "Search our store",
+  "search.searching": "Searching…",
+  "search.no_results": "No results found"
 }

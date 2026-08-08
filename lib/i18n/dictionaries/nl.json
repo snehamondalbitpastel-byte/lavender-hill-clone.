@@ -21,5 +21,8 @@
   "cart.checkout": "Afrekenen",
   "cart.remove": "Verwijderen",
   "cart.save": "Redden",
-  "product.add_to_cart": "Voeg toe aan winkelwagen"
+  "product.add_to_cart": "Voeg toe aan winkelwagen",
+  "search.placeholder": "Zoek in onze winkel",
+  "search.searching": "Zoeken…",
+  "search.no_results": "Geen resultaten gevonden"
 }
