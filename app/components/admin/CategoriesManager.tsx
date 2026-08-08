@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import ConfirmModal from "./ConfirmModal";
+import CollectionProductsPicker, { type PickerProduct } from "./CollectionProductsPicker";
 
 type Cat = {
   id: number;
@@ -42,7 +43,7 @@ const inputCls =
   "border border-line rounded-md px-3 py-2 text-sm bg-white text-espresso focus:outline-none focus:border-espresso transition-colors w-full";
 const labelCls = "text-[11px] uppercase tracking-[0.1em] text-espresso/55 mb-1 block";
 
-export default function CategoriesManager({ categories }: { categories: Cat[] }) {
+export default function CategoriesManager({ categories, products = [] }: { categories: Cat[]; products?: PickerProduct[] }) {
   const router = useRouter();
   const [label, setLabel] = useState("");
   const [parentId, setParentId] = useState("");
@@ -214,8 +215,12 @@ export default function CategoriesManager({ categories }: { categories: Cat[] })
           <label className={labelCls}>Bottom description <span className="normal-case text-espresso/40">(optional — closing note after the products)</span></label>
           <textarea className={`${inputCls} min-h-[90px] resize-y`} value={ed.bottomDescription} onChange={(e) => setEd({ ...ed, bottomDescription: e.target.value })} placeholder="Optional closing paragraph shown below the product grid…" />
         </div>
+        <div>
+          <label className={labelCls}>Products in this collection</label>
+          <CollectionProductsPicker collectionId={c.id} handle={c.handle} source={ed.source} products={products} />
+        </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => save(c.id)} disabled={busy} className="text-xs font-medium text-white bg-espresso rounded-md px-4 py-2">Save</button>
+          <button onClick={() => save(c.id)} disabled={busy} className="text-xs font-medium text-white bg-espresso rounded-md px-4 py-2">Save details</button>
           <button onClick={() => setEditId(null)} className="text-xs text-espresso/60 px-2">Cancel</button>
         </div>
       </div>

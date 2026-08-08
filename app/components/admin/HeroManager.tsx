@@ -33,7 +33,13 @@ const BLANK: Draft = {
   gradient: "", overlay: "", titleSize: "", box: "", buttons: [], order: 0, active: true,
 };
 
-export default function HeroManager({ slides }: { slides: Slide[] }) {
+export default function HeroManager({
+  slides,
+  collections = [],
+}: {
+  slides: Slide[];
+  collections?: { handle: string; label: string }[];
+}) {
   const router = useRouter();
   const [editing, setEditing] = useState<{ id: number | null; data: Draft } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -168,14 +174,21 @@ export default function HeroManager({ slides }: { slides: Slide[] }) {
             </div>
           </div>
 
+          {/* Collection links, offered as suggestions on the link field below */}
+          <datalist id="lh-collection-links">
+            {collections.map((c) => (
+              <option key={c.handle} value={`/collections/${c.handle}`}>{c.label}</option>
+            ))}
+          </datalist>
+
           {/* Buttons */}
           <div>
-            <label className={labelCls}>Buttons (0–2) — label, link &amp; style</label>
+            <label className={labelCls}>Buttons (0–2) — label, link &amp; style <span className="normal-case text-espresso/40">(pick a collection from the link list, or type any URL)</span></label>
             <div className="flex flex-col gap-2">
               {btns.map((b, i) => (
                 <div key={i} className="flex flex-wrap items-center gap-2">
                   <input className={`${inputCls} flex-1 min-w-[120px]`} value={b.label} onChange={(e) => setBtn(i, { label: e.target.value })} placeholder="Label (e.g. Shop now)" />
-                  <input className={`${inputCls} flex-1 min-w-[150px]`} value={b.href} onChange={(e) => setBtn(i, { href: e.target.value })} placeholder="Link (e.g. /shop or /collections/summer)" />
+                  <input list="lh-collection-links" className={`${inputCls} flex-1 min-w-[150px]`} value={b.href} onChange={(e) => setBtn(i, { href: e.target.value })} placeholder="Link — pick a collection or type a URL" />
                   <select className="border border-line rounded-md px-2 py-2 text-sm bg-white text-espresso" value={b.variant} onChange={(e) => setBtn(i, { variant: e.target.value as Btn["variant"] })}>
                     <option value="taupe">Taupe</option>
                     <option value="light">Light</option>

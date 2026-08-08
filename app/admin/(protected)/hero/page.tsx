@@ -4,7 +4,10 @@ import HeroManager from "@/app/components/admin/HeroManager";
 
 export default async function AdminHeroPage() {
   await requireAdmin();
-  const rows = await prisma.heroSlide.findMany({ orderBy: { order: "asc" } });
+  const [rows, collections] = await Promise.all([
+    prisma.heroSlide.findMany({ orderBy: { order: "asc" } }),
+    prisma.category.findMany({ orderBy: [{ order: "asc" }, { label: "asc" }], select: { handle: true, label: true } }),
+  ]);
   const slides = rows.map((s) => ({
     id: s.id,
     title: s.title,
@@ -30,7 +33,7 @@ export default async function AdminHeroPage() {
           The home-page carousel. Add, edit, reorder or hide banners — and set exactly where each button links.
         </p>
       </header>
-      <HeroManager slides={slides} />
+      <HeroManager slides={slides} collections={collections} />
     </div>
   );
 }
