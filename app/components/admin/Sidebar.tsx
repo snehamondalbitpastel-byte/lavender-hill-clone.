@@ -15,11 +15,11 @@ const NAV: { href: string; label: string; icon: IconName; exact?: boolean }[] = 
   // Promo/coupon codes — created here, entered by customers at checkout.
   { href: "/admin/discounts", label: "Discounts", icon: "discounts" },
   { href: "/admin/products", label: "Products", icon: "products" },
-  { href: "/admin/categories", label: "Categories", icon: "categories" },
+  { href: "/admin/categories", label: "Collections", icon: "categories" },
   { href: "/admin/customers", label: "Customers", icon: "customers" },
   { href: "/admin/content", label: "Content", icon: "content" },
   { href: "/admin/hero", label: "Hero", icon: "hero" },
-  { href: "/admin/collections", label: "Collections", icon: "collections" },
+  { href: "/admin/collections", label: "Home Tiles", icon: "collections" },
   { href: "/admin/looks", label: "As Styled By You", icon: "looks" },
 ];
 

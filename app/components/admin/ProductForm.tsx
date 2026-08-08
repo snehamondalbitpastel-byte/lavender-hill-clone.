@@ -157,7 +157,7 @@ export default function ProductForm({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>Category</label>
+                  <label className={labelCls}>Collection <span className="normal-case text-espresso/40">(main)</span></label>
                   <select className={inputCls} value={f.category} onChange={(e) => set("category", e.target.value)}>
                     <option value="">— none —</option>
                     {categories.map((c) => <option key={c.handle} value={c.handle}>{c.label}</option>)}
@@ -170,7 +170,7 @@ export default function ProductForm({
               </div>
               {categories.length > 0 && (
                 <div>
-                  <label className={labelCls}>Also show in these categories <span className="normal-case text-espresso/40">— optional; a product can appear in several collections</span></label>
+                  <label className={labelCls}>Also show in these collections <span className="normal-case text-espresso/40">— optional; a product can appear in several collections</span></label>
                   <div className="flex flex-wrap gap-x-4 gap-y-2 border border-line rounded-md p-3 bg-white">
                     {categories.map((c) => (
                       <label key={c.handle} className="flex items-center gap-1.5 text-sm text-espresso cursor-pointer">

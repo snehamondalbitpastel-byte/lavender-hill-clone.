@@ -80,7 +80,7 @@ export default function CategoriesManager({ categories }: { categories: Cat[] })
     setParentId("");
     setPage("shop");
     setBusy(false);
-    toast.success("Category added");
+    toast.success("Collection added");
     router.refresh();
   }
 
@@ -104,7 +104,7 @@ export default function CategoriesManager({ categories }: { categories: Cat[] })
     });
     setEditId(null);
     setBusy(false);
-    toast.success("Category updated");
+    toast.success("Collection updated");
     router.refresh();
   }
 
@@ -114,7 +114,7 @@ export default function CategoriesManager({ categories }: { categories: Cat[] })
     const res = await fetch(`/api/admin/categories/${pendingDel.id}`, { method: "DELETE" });
     setBusy(false);
     if (res.ok) {
-      toast.success("Category deleted");
+      toast.success("Collection deleted");
       setPendingDel(null);
       router.refresh();
     } else {
@@ -186,7 +186,7 @@ export default function CategoriesManager({ categories }: { categories: Cat[] })
         </div>
         <div>
           <label className={labelCls}>Banner description</label>
-          <textarea className={`${inputCls} min-h-[90px] resize-y`} value={ed.description} onChange={(e) => setEd({ ...ed, description: e.target.value })} placeholder="Shown under the heading on this category's page…" />
+          <textarea className={`${inputCls} min-h-[90px] resize-y`} value={ed.description} onChange={(e) => setEd({ ...ed, description: e.target.value })} placeholder="Shown under the heading on this collection's page…" />
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => save(c.id)} disabled={busy} className="text-xs font-medium text-white bg-espresso rounded-md px-4 py-2">Save</button>
@@ -211,8 +211,8 @@ export default function CategoriesManager({ categories }: { categories: Cat[] })
       {/* Add — can nest under ANY existing category */}
       <form onSubmit={add} className="bg-cream border border-line rounded-xl shadow-soft p-5 flex flex-wrap items-end gap-3">
         <div className="flex-1 min-w-[180px]">
-          <label className={labelCls}>New category</label>
-          <input className={inputCls} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Shop by Fit" />
+          <label className={labelCls}>New collection</label>
+          <input className={inputCls} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Short Sleeve T-shirts" />
         </div>
         <div>
           <label className={labelCls}>Under</label>
@@ -238,16 +238,16 @@ export default function CategoriesManager({ categories }: { categories: Cat[] })
       <div className="bg-cream border border-line rounded-xl shadow-soft divide-y divide-line">
         {renderTree(null, 0)}
         {categories.length === 0 && (
-          <p className="px-4 py-8 text-center text-sm text-espresso/40">No categories yet.</p>
+          <p className="px-4 py-8 text-center text-sm text-espresso/40">No collections yet.</p>
         )}
       </div>
 
       <ConfirmModal
         open={!!pendingDel}
-        title="Delete this category?"
+        title="Delete this collection?"
         message={
           pendingDel?.kids
-            ? `Its ${pendingDel.kids} sub-categor${pendingDel.kids === 1 ? "y" : "ies"} will move up one level.`
+            ? `Its ${pendingDel.kids} sub-collection${pendingDel.kids === 1 ? "" : "s"} will move up one level.`
             : "This can't be undone."
         }
         busy={busy}
