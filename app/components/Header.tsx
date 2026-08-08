@@ -126,8 +126,6 @@ export default function Header() {
           {/* Right: locale + account + icons */}
           <div className="flex flex-1 items-center justify-end gap-4 md:gap-5">
             <LocalizationSelector />
-            {/* Search — sits between the currency and language selectors */}
-            <SearchBox />
             <div className="lg:ml-6">
               <LanguageSelector />
             </div>
@@ -138,6 +136,8 @@ export default function Header() {
               <span className="sr-only">Login</span>
               <AccountIcon />
             </a>
+            {/* Search — sits between the account icon and the cart bag */}
+            <SearchBox />
             <button
               aria-label="Cart"
               onClick={openCart}
