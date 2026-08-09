@@ -5,6 +5,7 @@ import { useState } from "react";
 import { getProduct, type Product, type Card } from "@/lib/api";
 import { useCart, parseRs } from "./CartProvider";
 import { useCurrency } from "./CurrencyProvider";
+import { badgeClass } from "@/lib/badge";
 import { variantStockOf } from "@/lib/inventory";
 
 // Shared product card — used by the homepage "Bestsellers" and the shop page.
@@ -125,8 +126,8 @@ export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | 
           if (!save && !p.badge) return null;
           return (
             <div className="badge-list-lh">
-              {save && <span className="badge-lh badge-lh--sale">{localize(save)}</span>}
-              {p.badge && <span className="badge-lh">{p.badge}</span>}
+              {save && <span className={badgeClass(save)}>{localize(save)}</span>}
+              {p.badge && <span className={badgeClass(p.badge)}>{p.badge}</span>}
             </div>
           );
         })()}

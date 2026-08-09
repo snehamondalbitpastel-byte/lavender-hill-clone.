@@ -70,6 +70,8 @@ export default function ProductForm({
 }) {
   const router = useRouter();
   const editing = !!initial?.id;
+  // Collections listed A→Z so a newly-created one slots in predictably.
+  const sortedCategories = [...categories].sort((a, b) => a.label.localeCompare(b.label));
 
   const [f, setF] = useState<ProductFormData>({
     id: initial?.id,
@@ -104,6 +106,14 @@ export default function ProductForm({
     set("content", { ...C, [k]: v });
   }
   const salePreview = previewSale(f.price, f.discountType, f.discountValue);
+  // Live compare-at sale preview: a compare-at HIGHER than the price puts the
+  // product on Sale (struck "was" price + auto "Save Rs X" badge). Shown so the
+  // admin sees the result — and is warned if compare-at ≤ price (no sale).
+  const priceNum = parseFloat(String(f.price).replace(/[^\d.]/g, "")) || 0;
+  const compareNum = parseFloat(String(f.compareAtPrice).replace(/[^\d.]/g, "")) || 0;
+  const compareSave = compareNum > priceNum && priceNum > 0 ? Math.round(compareNum - priceNum) : 0;
+  const compareInvalid = compareNum > 0 && priceNum > 0 && compareNum <= priceNum;
+  const rs = (n: number) => "Rs. " + Math.round(n).toLocaleString("en-US") + ".00";
   const toggleSize = (s: string) =>
     set("sizes", f.sizes.includes(s) ? f.sizes.filter((x) => x !== s) : [...f.sizes, s]);
   const setColour = (i: number, patch: Partial<Colour>) =>
@@ -160,7 +170,7 @@ export default function ProductForm({
                   <label className={labelCls}>Collection <span className="normal-case text-espresso/40">(main)</span></label>
                   <select className={inputCls} value={f.category} onChange={(e) => set("category", e.target.value)}>
                     <option value="">— none —</option>
-                    {categories.map((c) => <option key={c.handle} value={c.handle}>{c.label}</option>)}
+                    {sortedCategories.map((c) => <option key={c.handle} value={c.handle}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
@@ -172,7 +182,7 @@ export default function ProductForm({
                 <div>
                   <label className={labelCls}>Also show in these collections <span className="normal-case text-espresso/40">— optional; a product can appear in several collections</span></label>
                   <div className="flex flex-wrap gap-x-4 gap-y-2 border border-line rounded-md p-3 bg-white">
-                    {categories.map((c) => (
+                    {sortedCategories.map((c) => (
                       <label key={c.handle} className="flex items-center gap-1.5 text-sm text-espresso cursor-pointer">
                         <input
                           type="checkbox"
@@ -195,15 +205,25 @@ export default function ProductForm({
             <h2 className="text-sm uppercase tracking-[0.1em] text-espresso/70 mb-4">Price</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Price</label>
-                <input className={inputCls} value={f.price} onChange={(e) => set("price", e.target.value)} required placeholder="5200 or Rs. 5,200.00" />
+                <label className={labelCls}>Price <span className="normal-case text-espresso/40">(what the customer pays)</span></label>
+                <input className={inputCls} value={f.price} onChange={(e) => set("price", e.target.value)} required placeholder="6500 or Rs. 6,500.00" />
               </div>
               <div>
-                <label className={labelCls}>Compare-at price</label>
-                <input className={inputCls} value={f.compareAtPrice} onChange={(e) => set("compareAtPrice", e.target.value)} placeholder="higher → on sale" />
+                <label className={labelCls}>Compare-at price <span className="normal-case text-espresso/40">(the higher “was” price)</span></label>
+                <input className={inputCls} value={f.compareAtPrice} onChange={(e) => set("compareAtPrice", e.target.value)} placeholder="e.g. 9100 (must be higher)" />
               </div>
             </div>
-            <p className="text-xs text-espresso/45 mt-2">A compare-at price higher than the price puts this product on Sale (auto “Save Rs X” badge).</p>
+            {compareSave > 0 ? (
+              <p className="text-xs mt-2 text-[#307a07]">
+                ✓ On sale — <s className="text-espresso/40">{rs(compareNum)}</s> <span className="text-plum">{rs(priceNum)}</span> · auto <b>Save {rs(compareSave)}</b> badge (purple) shows on the storefront.
+              </p>
+            ) : compareInvalid ? (
+              <p className="text-xs mt-2 text-[#b23a3a]">
+                ⚠ Compare-at ({rs(compareNum)}) must be <b>higher</b> than the price ({rs(priceNum)}) to put it on Sale — right now it won’t show a “Save” badge.
+              </p>
+            ) : (
+              <p className="text-xs text-espresso/45 mt-2">A compare-at price <b>higher</b> than the price puts this product on Sale (auto “Save Rs X” badge, in purple).</p>
+            )}
 
             {/* Per-product discount — an automatic markdown on the price. When set,
                 the store sells at price − discount and shows the original struck

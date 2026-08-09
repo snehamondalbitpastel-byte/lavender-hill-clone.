@@ -51,14 +51,32 @@ export async function GET(
 
   const content = normalizeContent(safeParse(product.content));
 
-  // You Might Also Like — auto: a few other products in the same category.
-  const relatedRows = product.category
+  // You Might Also Like — automatic recommendations. Prefer products in the same
+  // primary category; if none (or the product has no category), fall back to any
+  // that share a collection tag; finally, fall back to any other products — so the
+  // section is never empty when there's more than one product in the store.
+  const notThis = { id: { not: product.id } };
+  let relatedRows = product.category
     ? await prisma.product.findMany({
-        where: { category: product.category, id: { not: product.id } },
+        where: { ...notThis, category: product.category },
         orderBy: { order: "asc" },
         take: 6,
       })
     : [];
+  if (relatedRows.length === 0 && product.categories.length > 0) {
+    relatedRows = await prisma.product.findMany({
+      where: { ...notThis, categories: { hasSome: product.categories } },
+      orderBy: { order: "asc" },
+      take: 6,
+    });
+  }
+  if (relatedRows.length === 0) {
+    relatedRows = await prisma.product.findMany({
+      where: notThis,
+      orderBy: { order: "asc" },
+      take: 6,
+    });
+  }
   const related = relatedRows.map((r) => {
     const rp = productPricing(r.price, r.compareAtPrice, r.discountType, r.discountValue);
     return {

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useCart, bundleFor, type CartItem } from "./CartProvider";
 import { useCurrency } from "./CurrencyProvider";
 import { useT } from "./LocaleProvider";
+import { badgeClass } from "@/lib/badge";
 
 type Offer = { code: string; off: string; min: number };
 
@@ -229,7 +230,7 @@ function Line({
               </span>
             )}
             {item.badge && (
-              <span className="badge-lh">
+              <span className={badgeClass(item.badge)}>
                 {item.badge}
                 {discount > 0 ? ` (−${money(discount)})` : ""}
               </span>

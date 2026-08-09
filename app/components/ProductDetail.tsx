@@ -6,6 +6,7 @@ import { useFetch } from "@/hooks/useFetch";
 import { getProduct, type ProductFull } from "@/lib/api";
 import { useCart, parseRs } from "./CartProvider";
 import { useCurrency } from "./CurrencyProvider";
+import { badgeClass } from "@/lib/badge";
 import { maxQtyFor, MAX_PER_ORDER, variantStockOf, colourSoldOutOf } from "@/lib/inventory";
 
 // ============================================================
@@ -500,9 +501,9 @@ export default function ProductDetail({ id }: { id: string }) {
             {(product.saveBadge || product.badge) && (
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {product.saveBadge && (
-                  <span className="badge-lh badge-lh--sale">{localize(product.saveBadge)}</span>
+                  <span className={badgeClass(product.saveBadge)}>{localize(product.saveBadge)}</span>
                 )}
-                {product.badge && <span className="badge-lh">{product.badge}</span>}
+                {product.badge && <span className={badgeClass(product.badge)}>{product.badge}</span>}
               </div>
             )}
 
