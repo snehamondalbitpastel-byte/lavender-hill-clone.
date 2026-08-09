@@ -13,6 +13,7 @@ import {
 import LocalizationSelector from "./LocalizationSelector";
 import LanguageSelector from "./LanguageSelector";
 import SearchBox from "./SearchBox";
+import MenuPanel from "./MenuPanel";
 import { useCart } from "./CartProvider";
 import { useT } from "./LocaleProvider";
 
@@ -49,6 +50,18 @@ export default function Header() {
   const { openCart, count } = useCart();
   const { t } = useT();
   const pathname = usePathname();
+
+  // Shop hover mega-menu — a small close delay lets the cursor cross the gap from
+  // the "Shop" link down into the full-width panel without it snapping shut.
+  const [shopOpen, setShopOpen] = useState(false);
+  const shopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openShop = () => {
+    if (shopTimer.current) clearTimeout(shopTimer.current);
+    setShopOpen(true);
+  };
+  const closeShop = () => {
+    shopTimer.current = setTimeout(() => setShopOpen(false), 120);
+  };
   // A tab is "active" when the current URL is that page (or a sub-page of it).
   const isActive = (href: string) =>
     href !== "#" && (pathname === href || pathname.startsWith(href + "/"));
@@ -101,12 +114,15 @@ export default function Header() {
             {NAV.map((item) => {
               const href = hrefFor(item);
               const active = isActive(href);
+              const isShop = item === "Shop";
               return (
                 <Link
                   key={item}
                   href={href}
                   data-active={active || undefined}
                   aria-current={active ? "page" : undefined}
+                  onMouseEnter={isShop ? openShop : undefined}
+                  onMouseLeave={isShop ? closeShop : undefined}
                   className={`nav-link-lh flex h-full items-center text-[14.7px] tracking-[0.18em] leading-[1.7] transition-colors ${
                     active ? "text-espresso font-medium" : "text-espresso/70 hover:text-espresso"
                   }`}
@@ -152,6 +168,17 @@ export default function Header() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Shop hover mega-menu — full-width panel under the header (admin-managed) */}
+      <div
+        onMouseEnter={openShop}
+        onMouseLeave={closeShop}
+        className={`absolute left-0 right-0 top-full z-30 hidden border-t border-line bg-cream shadow-soft-lg transition-all duration-200 ease-out md:block ${
+          shopOpen ? "opacity-100 translate-y-0" : "pointer-events-none -translate-y-2 opacity-0"
+        }`}
+      >
+        <MenuPanel />
       </div>
 
       {/* Mobile drawer */}
