@@ -145,7 +145,7 @@ export default function CheckoutForm({
   });
 
   const linePayload = () =>
-    cart.items.map((i) => ({ productId: i.productId, colour: i.colour, size: i.size, qty: i.qty }));
+    cart.items.map((i) => ({ productId: i.productId, colour: i.colour, colourKey: i.colourKey, size: i.size, qty: i.qty }));
 
   // Start a payment intent (or mock) once the cart is known. A Stripe PaymentIntent's
   // amount is fixed at creation, so applying/removing a code (appliedCode) RE-creates

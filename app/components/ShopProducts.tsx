@@ -97,6 +97,11 @@ export default function ShopProducts({
   );
   const router = useRouter();
   const { t, locale } = useT();
+  // A stable key per listing (shop / sale / new-in / bestseller / each category)
+  // so the applied view is remembered separately for each — see the persist +
+  // restore effects below.
+  const scope = bestseller ? "bestseller" : newIn ? "new" : saleOnly ? "sale" : `cat:${category ?? "all"}`;
+  const STORE_KEY = `lh_shopview:${scope}`;
   // Localized DISPLAY labels for the dynamic facet values (product types, colours,
   // sizes). The underlying English values still drive filtering/links/cart; only
   // the shown text is localized (via /api/translate). Base locale → identity.
@@ -121,6 +126,50 @@ export default function ShopProducts({
   const [filterOpen, setFilterOpen] = useState(false); // drawer mounted in DOM
   const [drawerShown, setDrawerShown] = useState(false); // slid into view
   const topRef = useRef<HTMLDivElement>(null);
+
+  // ---- Persist the applied view (filters / sort / page / layout) per listing ----
+  // Without this, opening a product from the results and coming back reset the
+  // filter (component unmounts → state lost). Now the applied filter STAYS until
+  // the shopper clears it. `restored` gates the save so we never overwrite the
+  // stored value with the initial empty defaults on first mount.
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(STORE_KEY);
+      if (raw) {
+        const v = JSON.parse(raw) as {
+          filters?: Record<FilterKey, string[]>;
+          sort?: SortKey;
+          page?: number;
+          layout?: Layout;
+        };
+        if (v.filters && typeof v.filters === "object") {
+          const f: Record<FilterKey, string[]> = {
+            productType: Array.isArray(v.filters.productType) ? v.filters.productType : [],
+            colour: Array.isArray(v.filters.colour) ? v.filters.colour : [],
+            size: Array.isArray(v.filters.size) ? v.filters.size : [],
+          };
+          setFilters(f);
+          setDraft(f);
+        }
+        if (v.sort) setSort(v.sort);
+        if (typeof v.page === "number" && v.page >= 1) setPage(v.page);
+        if (v.layout) setLayout(v.layout);
+      }
+    } catch {
+      /* ignore corrupt storage */
+    }
+    setRestored(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [STORE_KEY]);
+  useEffect(() => {
+    if (!restored) return;
+    try {
+      sessionStorage.setItem(STORE_KEY, JSON.stringify({ filters, sort, page, layout }));
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }, [restored, STORE_KEY, filters, sort, page, layout]);
 
   // Localize the unique facet VALUES for display (product types, colours, sizes).
   // English values still drive filtering; only the shown label changes.

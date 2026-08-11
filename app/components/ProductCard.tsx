@@ -85,6 +85,7 @@ export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | 
     try {
       const full = await getProduct(slug);
       const wantColour = colourHint || full.colours[0]?.name || "";
+      const colourIndex = full.colours.findIndex((c) => c.name === wantColour);
       const col = full.colours.find((c) => c.name === wantColour) || full.colours[0];
       const wantSize = sizeHint && full.sizes.includes(sizeHint) ? sizeHint : full.sizes[0] || "";
       await cart.requestAdd({
@@ -92,6 +93,8 @@ export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | 
         slug: full.slug,
         title: full.title,
         colour: col?.name || "",
+        // Stable, language-independent colour id so the line merges across languages.
+        colourKey: col?.hex?.trim() || (colourIndex >= 0 ? `i${colourIndex}` : col?.name || ""),
         size: wantSize,
         image: col?.image || full.image,
         price: parseRs(full.price),

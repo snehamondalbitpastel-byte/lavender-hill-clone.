@@ -220,12 +220,15 @@ export default function ProductDetail({ id }: { id: string }) {
     // Build the exact line being added (resolved colour/size + chosen quantity).
     const chosenColour = colour || product.colours[0]?.name || "";
     const chosenSize = size || product.sizes[0] || "";
+    const colourIndex = product.colours.findIndex((c) => c.name === chosenColour);
     const col = product.colours.find((c) => c.name === chosenColour);
     const payload = {
       productId: product.id,
       slug: product.slug,
       title: product.title,
       colour: chosenColour,
+      // Stable, language-independent colour id so the line merges across languages.
+      colourKey: col?.hex?.trim() || (colourIndex >= 0 ? `i${colourIndex}` : chosenColour),
       size: chosenSize,
       image: col?.image || product.image,
       price: parseRs(product.price),

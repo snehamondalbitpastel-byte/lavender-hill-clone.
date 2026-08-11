@@ -10,7 +10,8 @@ import { productPricing } from "./cards";
 
 export type CartLineInput = {
   productId: number;
-  colour?: string;
+  colour?: string; // localized display name (may be "白" etc.) — NOT reliable for matching
+  colourKey?: string; // stable, language-independent colour id (hex, or "i<index>")
   size?: string;
   qty: number;
 };
@@ -31,7 +32,8 @@ export type ComputedLine = {
   productId: number;
   slug: string;
   title: string;
-  colour: string;
+  colour: string; // LOCALIZED display name (kept translated for the receipt/order)
+  colourMatch: string; // CANONICAL colour name — used only for stock/restock matching
   size: string;
   image: string;
   price: number;
@@ -82,21 +84,38 @@ export async function computeOrder(
     const bundleDiscount = b && qty >= b.threshold ? round2((lineTotal * b.pct) / 100) : 0;
     discount += bundleDiscount;
 
-    // Colour-specific image (from colourData), else the product image.
+    // Resolve the colour language-INDEPENDENTLY for MATCHING only. The cart sends a
+    // stable `colourKey` (the colour's hex, or "i<index>"); match it against
+    // colourData to get the CANONICAL colour name + image even when the shopper
+    // browsed in another language ("白" → "White"). The DISPLAYED colour stays the
+    // shopper's localized name (translation preserved on the receipt/order); the
+    // canonical name is used only for per-variant stock + returns/restock.
+    let colourMatch = it.colour ?? "";
     let image = product.image;
     try {
-      const cds = JSON.parse(product.colourData || "[]") as { name: string; image: string }[];
-      const cd = cds.find((c) => c.name === it.colour);
-      if (cd?.image) image = cd.image;
+      const cds = JSON.parse(product.colourData || "[]") as { name: string; hex?: string; image?: string }[];
+      const key = (it.colourKey ?? "").trim();
+      let cd = key ? cds.find((c) => (c.hex ?? "").trim() === key && key !== "") : undefined;
+      if (!cd && /^i\d+$/.test(key)) {
+        const idx = Number(key.slice(1));
+        if (idx >= 0 && idx < cds.length) cd = cds[idx];
+      }
+      if (!cd) cd = cds.find((c) => c.name === it.colour);
+      if (cd) {
+        colourMatch = cd.name;
+        if (cd.image) image = cd.image;
+      }
     } catch {
       /* ignore */
     }
+    const colourDisplay = (it.colour ?? "").trim() || colourMatch; // keep the localized name for display
 
     lines.push({
       productId: product.id,
       slug: product.slug,
       title: product.title,
-      colour: it.colour ?? "",
+      colour: colourDisplay,
+      colourMatch,
       size: it.size ?? "",
       image,
       price,

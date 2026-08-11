@@ -15,7 +15,7 @@ const inr = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDi
 // productId + colour + size. Untracked variants are skipped. After restocking a
 // product, flush any back-in-stock subscriptions that are now satisfiable.
 async function restockReturnItems(order: { items: string }, ret: { items: string }, origin: string) {
-  let orderItems: { productId?: number; colour?: string; size?: string }[] = [];
+  let orderItems: { productId?: number; colour?: string; colourMatch?: string; size?: string }[] = [];
   let retItems: { index: number; qty: number }[] = [];
   try { orderItems = JSON.parse(order.items || "[]"); } catch { /* ignore */ }
   try { retItems = JSON.parse(ret.items || "[]"); } catch { /* ignore */ }
@@ -24,7 +24,9 @@ async function restockReturnItems(order: { items: string }, ret: { items: string
     const oi = orderItems[ri.index];
     const pid = oi?.productId;
     if (pid == null) continue;
-    const colour = oi?.colour ?? "";
+    // Match stock by the canonical colour (language-independent); older orders
+    // without it fall back to the stored display colour.
+    const colour = oi?.colourMatch ?? oi?.colour ?? "";
     const size = oi?.size ?? "";
     const p = await prisma.product.findUnique({ where: { id: pid }, select: { colourData: true } });
     if (!p) continue;

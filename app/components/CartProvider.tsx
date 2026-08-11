@@ -20,11 +20,12 @@ import { maxQtyFor } from "@/lib/inventory";
 // ============================================================
 
 export type CartItem = {
-  key: string; // productId|colour|size — identifies a line
+  key: string; // productId|colourKey|size — identifies a line
   productId: number;
   slug: string;
   title: string;
-  colour: string;
+  colour: string; // localized display name (e.g. "White" / "白") — for rendering only
+  colourKey?: string; // stable, language-INDEPENDENT colour id (hex/index) — used in the line key
   size: string;
   image: string;
   price: number; // unit selling price
@@ -130,7 +131,11 @@ export default function CartProvider({ children }: { children: ReactNode }) {
 
   const add = useCallback((it: AddInput) => {
     if (it.stock != null && it.stock <= 0) return; // out of stock → nothing to add
-    const key = `${it.productId}|${it.colour}|${it.size}`;
+    // Identify a line by a language-INDEPENDENT colour id (hex/index) so the same
+    // variant added under different languages ("White" vs "白") merges into ONE
+    // line and just bumps the quantity — instead of showing the card twice.
+    const cid = (it.colourKey && it.colourKey.trim()) || it.colour;
+    const key = `${it.productId}|${cid}|${it.size}`;
     const addQty = it.qty ?? 1;
     // Cap at min(available stock, 5 per order) — the same limit the server enforces.
     const cap = maxQtyFor(it.stock);

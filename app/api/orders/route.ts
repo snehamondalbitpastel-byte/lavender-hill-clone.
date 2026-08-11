@@ -102,7 +102,8 @@ export async function POST(request: Request) {
     productId: l.productId,
     slug: l.slug,
     title: l.title,
-    colour: l.colour,
+    colour: l.colour, // localized display (translation preserved)
+    colourMatch: l.colourMatch, // canonical — for returns/restock matching
     size: l.size,
     image: l.image,
     price: l.price,
@@ -116,10 +117,11 @@ export async function POST(request: Request) {
   // Units needed per (product, COLOUR, SIZE) — stock is tracked per variant.
   const need = new Map<string, { productId: number; colour: string; size: string; qty: number }>();
   for (const l of computed.lines) {
-    const k = `${l.productId}|${l.colour}|${l.size}`;
+    // Match stock by the CANONICAL colour (language-independent), not the display name.
+    const k = `${l.productId}|${l.colourMatch}|${l.size}`;
     const cur = need.get(k);
     if (cur) cur.qty += l.qty;
-    else need.set(k, { productId: l.productId, colour: l.colour, size: l.size, qty: l.qty });
+    else need.set(k, { productId: l.productId, colour: l.colourMatch, size: l.size, qty: l.qty });
   }
 
   // Create the order + decrement each variant's stock ATOMICALLY, re-checking
