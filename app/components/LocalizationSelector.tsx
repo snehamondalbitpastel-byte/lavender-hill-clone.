@@ -33,6 +33,11 @@ export default function LocalizationSelector() {
   const [switching, setSwitching] = useState(false); // brief loader on currency change
   const [countries, setCountries] = useState<Country[]>([]);
   const [selected, setSelected] = useState<Country>(DEFAULT);
+  // `ready` gates the flag/label: until the saved country is read from
+  // localStorage (after mount), we show a neutral placeholder instead of the
+  // default India/INR — otherwise a full reload (e.g. the language switch) flashes
+  // the wrong flag for a moment before switching to the real selection.
+  const [ready, setReady] = useState(false);
   const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
@@ -48,6 +53,7 @@ export default function LocalizationSelector() {
     } catch {
       /* ignore */
     }
+    setReady(true); // saved selection resolved → safe to show the flag/label
     let active = true;
     fetch("/api/countries")
       .then((r) => r.json())
@@ -119,10 +125,17 @@ export default function LocalizationSelector() {
         aria-label="Change country or currency"
         className="flex items-center gap-2 nav-link-lh text-[13px] text-espresso/70"
       >
-        <span className={`fi fi-${selected.code.toLowerCase()} rounded-[2px]`} aria-hidden="true" />
-        <span>
-          {selected.currency} {symbolOf(selected.currency)}
-        </span>
+        {ready ? (
+          <>
+            <span className={`fi fi-${selected.code.toLowerCase()} rounded-[2px]`} aria-hidden="true" />
+            <span>
+              {selected.currency} {symbolOf(selected.currency)}
+            </span>
+          </>
+        ) : (
+          // Placeholder until the saved selection is read — never the wrong flag.
+          <span className="inline-block h-3.5 w-11 rounded-[2px] bg-espresso/10" aria-hidden="true" />
+        )}
         <ChevronDown className="w-4.5 h-4.5" />
       </button>
 

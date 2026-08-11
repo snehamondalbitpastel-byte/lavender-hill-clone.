@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
   const order = await computeOrder(items, { code, customerId: session.customerId });
   if (order.couponError) {
-    return Response.json({ ok: false, error: order.couponError }, { status: 200 });
+    return Response.json({ ok: false, error: order.couponError, reason: order.couponReason ?? null }, { status: 200 });
   }
   return Response.json({
     ok: true,

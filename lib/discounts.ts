@@ -22,9 +22,13 @@ export function normalizeCode(raw: unknown): string {
 
 const inr = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// `reason` categorises a rejection so the checkout can tell a RECOVERABLE case
+// (below_min — the shopper just needs a bigger cart) from a permanent one
+// (expired / used / invalid). Only below_min coupons are "parked" for auto-apply.
+export type DiscountReason = "empty" | "invalid" | "inactive" | "expired" | "limit" | "below_min" | "used";
 export type DiscountResult =
   | { ok: true; code: string; type: string; discount: number }
-  | { ok: false; error: string };
+  | { ok: false; error: string; reason: DiscountReason };
 
 export async function validateDiscount(opts: {
   code: string;
@@ -32,21 +36,21 @@ export async function validateDiscount(opts: {
   customerId?: number | null;
 }): Promise<DiscountResult> {
   const code = normalizeCode(opts.code);
-  if (!code) return { ok: false, error: "Enter a discount code." };
+  if (!code) return { ok: false, error: "Enter a discount code.", reason: "empty" };
 
   const dc = await prisma.discountCode.findUnique({ where: { code } });
-  if (!dc || !dc.active) return { ok: false, error: "This code isn't valid." };
+  if (!dc || !dc.active) return { ok: false, error: "This code isn't valid.", reason: "invalid" };
 
   const now = new Date();
-  if (dc.startsAt && dc.startsAt > now) return { ok: false, error: "This code isn't active yet." };
-  if (dc.endsAt && dc.endsAt < now) return { ok: false, error: "This code has expired." };
+  if (dc.startsAt && dc.startsAt > now) return { ok: false, error: "This code isn't active yet.", reason: "inactive" };
+  if (dc.endsAt && dc.endsAt < now) return { ok: false, error: "This code has expired.", reason: "expired" };
 
   if (dc.usageLimit != null && dc.usageCount >= dc.usageLimit) {
-    return { ok: false, error: "This code has reached its usage limit." };
+    return { ok: false, error: "This code has reached its usage limit.", reason: "limit" };
   }
 
   if (opts.subtotal < dc.minSubtotal) {
-    return { ok: false, error: `Spend at least ${inr(dc.minSubtotal)} to use this code.` };
+    return { ok: false, error: `Spend at least ${inr(dc.minSubtotal)} to use this code.`, reason: "below_min" };
   }
 
   // Once-per-customer (admin-controlled): when enabled, a code is spent for a
@@ -57,7 +61,7 @@ export async function validateDiscount(opts: {
     const used = await prisma.order.count({
       where: { customerId: opts.customerId, discountCode: code },
     });
-    if (used > 0) return { ok: false, error: "You've already used this code." };
+    if (used > 0) return { ok: false, error: "You've already used this code.", reason: "used" };
   }
 
   let discount: number;
@@ -68,7 +72,7 @@ export async function validateDiscount(opts: {
     discount = dc.value; // fixed rupee amount
   }
   discount = round2(Math.min(discount, opts.subtotal)); // never take the total below zero
-  if (discount <= 0) return { ok: false, error: "This code doesn't apply to your cart." };
+  if (discount <= 0) return { ok: false, error: "This code doesn't apply to your cart.", reason: "invalid" };
 
   return { ok: true, code, type: dc.type, discount };
 }

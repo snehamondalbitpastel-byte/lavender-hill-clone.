@@ -172,7 +172,9 @@ export default function CheckoutForm({
         // The applied coupon no longer qualifies (e.g. the cart dropped below its
         // minimum) → drop it gracefully with a message; checkout continues at full price.
         if (d.couponError && appliedCode) {
-          setRemovedCode(appliedCode); // remember → auto-re-apply when the cart qualifies again
+          // Below-minimum is recoverable → remember it so it auto-re-applies when
+          // the cart qualifies again. Other reasons (expired/used) are permanent.
+          setRemovedCode(d.couponReason === "below_min" ? appliedCode : "");
           setAppliedCode("");
           setCodeInput("");
           setCodeError(`Coupon removed — ${d.couponError}`);
@@ -221,11 +223,14 @@ export default function CheckoutForm({
   const persistReady = useRef(false);
   useEffect(() => {
     if (!persistReady.current) { persistReady.current = true; return; }
+    // Persist the applied code OR a parked (below-minimum) code, so BOTH survive
+    // navigating to /cart and back — the parked one re-applies once eligible.
+    const keep = appliedCode || removedCode;
     try {
-      if (appliedCode) localStorage.setItem(CODE_KEY, appliedCode);
+      if (keep) localStorage.setItem(CODE_KEY, keep);
       else localStorage.removeItem(CODE_KEY);
     } catch { /* storage unavailable — non-critical */ }
-  }, [appliedCode]);
+  }, [appliedCode, removedCode]);
 
   // On load, re-apply a saved coupon once the cart has hydrated — SILENTLY, so a
   // code that expired/was used meanwhile just drops off instead of blocking checkout.
@@ -274,12 +279,17 @@ export default function CheckoutForm({
         setCodeError(""); // clear any "coupon removed" note now that it's back on
       } else {
         setAppliedCode("");
-        if (silent) {
-          // A saved/parked code that still doesn't qualify → keep it parked so it
-          // auto-applies later when the cart grows enough (don't nag the shopper).
+        if (data.reason === "below_min") {
+          // Recoverable — park it (persists via CODE_KEY + auto-re-applies once the
+          // cart grows enough) and ALWAYS explain why, even on a silent restore.
           setRemovedCode(code);
-          try { localStorage.removeItem(CODE_KEY); } catch { /* ignore */ }
-        } else setCodeError(data.error || "This code can't be applied.");
+          setCodeError(data.error || "Spend more to use this code.");
+        } else {
+          // Permanent (expired / used / invalid) — drop it. A silent restore of a
+          // dead code drops quietly; a manual attempt shows the reason.
+          setRemovedCode("");
+          if (!silent) setCodeError(data.error || "This code can't be applied.");
+        }
       }
     } catch {
       if (!silent) setCodeError("Couldn't apply the code. Please try again.");

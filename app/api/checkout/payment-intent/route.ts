@@ -28,6 +28,7 @@ export async function POST(request: Request) {
     couponDiscount: order.couponDiscount,
     couponCode: order.couponCode,
     couponError: order.couponError ?? null,
+    couponReason: order.couponReason ?? null,
     total: order.total,
   };
 

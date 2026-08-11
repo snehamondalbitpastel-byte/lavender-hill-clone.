@@ -51,6 +51,7 @@ export type ComputedOrder = {
   couponDiscount: number; // amount from an applied coupon code (0 if none)
   couponCode: string; // the coupon actually applied (uppercase), or ""
   couponError?: string; // set when a code was supplied but rejected (coupon ignored)
+  couponReason?: string; // WHY it was rejected ("below_min" = recoverable, else permanent)
   discount: number; // bundleDiscount + couponDiscount (total off)
   shipping: number;
   total: number;
@@ -137,6 +138,7 @@ export async function computeOrder(
   let couponDiscount = 0;
   let couponCode = "";
   let couponError: string | undefined;
+  let couponReason: string | undefined;
   if (opts.code && String(opts.code).trim()) {
     const base = round2(subtotal - bundleDiscount);
     const r = await validateDiscount({ code: opts.code, subtotal: base, customerId: opts.customerId });
@@ -145,12 +147,13 @@ export async function computeOrder(
       couponCode = r.code;
     } else {
       couponError = r.error;
+      couponReason = r.reason;
     }
   }
 
   const totalDiscount = round2(bundleDiscount + couponDiscount);
   const total = round2(subtotal - totalDiscount + shipping);
-  return { lines, subtotal, bundleDiscount, couponDiscount, couponCode, couponError, discount: totalDiscount, shipping, total };
+  return { lines, subtotal, bundleDiscount, couponDiscount, couponCode, couponError, couponReason, discount: totalDiscount, shipping, total };
 }
 
 export function formatRs(n: number): string {
