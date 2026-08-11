@@ -217,6 +217,9 @@ export default function ProductDetail({ id }: { id: string }) {
 
   async function addToCart() {
     if (!product || checking) return;
+    // Already in the bag → the stepper above now controls that line directly, so
+    // just open the drawer instead of ADDING again (which would stack quantities).
+    if (cart.items.some((i) => i.key === selKey)) { cart.openCart(); return; }
     // Build the exact line being added (resolved colour/size + chosen quantity).
     const chosenColour = colour || product.colours[0]?.name || "";
     const chosenSize = size || product.sizes[0] || "";
@@ -405,7 +408,20 @@ export default function ProductDetail({ id }: { id: string }) {
   const outOfStock = stock != null && stock <= 0;
   const lowStock = stock != null && stock > 0 && stock <= 10;
   const maxQty = maxQtyFor(stock); // min(stock, MAX_PER_ORDER)
-  const atMax = qty >= maxQty;
+  // Sync the stepper with the CART. When THIS exact variant is already in the bag,
+  // the stepper reflects + drives that cart line directly (so +/- here stay in
+  // lockstep with the drawer), instead of being a separate pre-add counter that
+  // would RE-ADD on top of the existing line (2 in cart, "add 1" → 3). The line
+  // key matches addToCart's (productId | stable colour id | size).
+  const selColourIndex = product.colours.findIndex((x) => x.name === selColour);
+  const selColourKey = selColourObj?.hex?.trim() || (selColourIndex >= 0 ? `i${selColourIndex}` : selColour);
+  const selKey = `${product.id}|${selColourKey || selColour}|${selSize}`;
+  const cartLine = cart.items.find((i) => i.key === selKey);
+  const displayQty = cartLine ? cartLine.qty : qty;
+  const atMax = displayQty >= maxQty;
+  // +/- : drive the cart line when it exists (like the drawer); else the pre-add counter.
+  const decQty = () => { if (cartLine) cart.setQty(selKey, Math.max(1, cartLine.qty - 1)); else changeQty(qty - 1); };
+  const incQty = () => { if (cartLine) cart.setQty(selKey, cartLine.qty + 1); else changeQty(qty + 1); };
 
   // Restore a variant's remembered quantity (fresh → 1), clamped to its own cap.
   const restoreQty = (colourName: string, sizeName: string) => {
@@ -495,7 +511,11 @@ export default function ProductDetail({ id }: { id: string }) {
               disabled={outOfStock}
               className="btn-lh btn-lh--light shrink-0 px-5 py-3 text-[0.7rem] disabled:cursor-not-allowed disabled:opacity-50 md:px-8"
             >
-              {outOfStock ? t("product.out_of_stock", "Out of stock") : t("product.add_to_cart", "Add to cart")}
+              {outOfStock
+                ? t("product.out_of_stock", "Out of stock")
+                : cartLine
+                  ? t("product.in_bag", "View bag")
+                  : t("product.add_to_cart", "Add to cart")}
             </button>
           </div>
         </div>
@@ -703,17 +723,17 @@ export default function ProductDetail({ id }: { id: string }) {
             <div className="mt-6 inline-flex items-center border border-line">
               <button
                 type="button"
-                onClick={() => changeQty(qty - 1)}
+                onClick={decQty}
                 aria-label="Decrease quantity"
                 disabled={outOfStock}
                 className="px-4 py-3 text-espresso/70 hover:text-espresso disabled:opacity-40"
               >
                 −
               </button>
-              <span className="w-10 text-center text-sm tabular-nums">{qty}</span>
+              <span className="w-10 text-center text-sm tabular-nums">{displayQty}</span>
               <button
                 type="button"
-                onClick={() => changeQty(qty + 1)}
+                onClick={incQty}
                 aria-label="Increase quantity"
                 disabled={outOfStock || atMax}
                 className="px-4 py-3 text-espresso/70 hover:text-espresso disabled:opacity-40"
@@ -757,7 +777,11 @@ export default function ProductDetail({ id }: { id: string }) {
               disabled={outOfStock}
               className="btn-lh btn-lh--plum mt-6 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {outOfStock ? t("product.out_of_stock", "Out of stock") : t("product.add_to_cart", "Add to cart")}
+              {outOfStock
+                ? t("product.out_of_stock", "Out of stock")
+                : cartLine
+                  ? t("product.in_bag", "View bag")
+                  : t("product.add_to_cart", "Add to cart")}
             </button>
             {warn && <p className="mt-2 text-sm text-[#b23a3a]">{warn}</p>}
 
