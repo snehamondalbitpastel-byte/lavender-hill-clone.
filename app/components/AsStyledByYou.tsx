@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useFetch } from "@/hooks/useFetch";
-import { getLooks, type Look } from "@/lib/api";
+import { getLooks, getProduct, type Look } from "@/lib/api";
 
 // "As Styled By You" shop-the-look carousel (/api/looks). One look per slide;
 // prev/next slide the track SMOOTHLY (translateX transition, not a jump). Each
@@ -13,9 +13,40 @@ import { getLooks, type Look } from "@/lib/api";
 // A look with no real link (legacy "#"/empty) falls back to /shop so it never dead-ends.
 const linkFor = (href: string) => (href && href !== "#" ? href : "/shop");
 
+// Colour of a look's product + its images (loaded on demand so the swatches can
+// switch the shown image like the shop cards).
+type LookVariant = { name: string; hex: string; image: string; hover: string };
+// Pull the product slug out of a look's link (e.g. "/products/foo?colour=Navy" → "foo").
+const slugFromHref = (href: string): string | null => {
+  const m = href.match(/\/products\/([^/?#]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+};
+
 export default function AsStyledByYou() {
   const { data: looks } = useFetch<Look[]>(getLooks, "looks");
   const [active, setActive] = useState(0);
+  // Per-look selected colour index + lazily-fetched per-colour images.
+  const [colourByLook, setColourByLook] = useState<Record<number, number>>({});
+  const [variantsByLook, setVariantsByLook] = useState<Record<number, LookVariant[]>>({});
+
+  // Pick a colour on a look: highlight it, and fetch that product's colour images
+  // once so the preview image can switch to the chosen colour.
+  async function pickLookColour(look: Look, i: number) {
+    setColourByLook((s) => ({ ...s, [look.id]: i }));
+    if (!variantsByLook[look.id]) {
+      const slug = slugFromHref(look.href);
+      if (!slug) return;
+      try {
+        const full = await getProduct(slug);
+        setVariantsByLook((s) => ({
+          ...s,
+          [look.id]: full.colours.map((c) => ({ name: c.name, hex: c.hex, image: c.image, hover: c.hover || c.image })),
+        }));
+      } catch {
+        /* keep the current image if the fetch fails */
+      }
+    }
+  }
 
   if (!looks || looks.length === 0)
     return <section className="py-16 md:py-24 bg-cream" />;
@@ -57,6 +88,13 @@ export default function AsStyledByYou() {
             >
               {looks.map((l) => {
                 const href = linkFor(l.href);
+                // Selected colour + (once loaded) that colour's images.
+                const ai = colourByLook[l.id] ?? 0;
+                const vs = variantsByLook[l.id];
+                const activeHex = (l.colors[ai] || "").toLowerCase();
+                const av = vs?.find((v) => v.hex.toLowerCase() === activeHex) ?? vs?.[ai];
+                const img = av?.image || l.productImg;
+                const imgAlt = av?.hover || l.productImgAlt;
                 return (
                   <div key={l.id} className="w-full shrink-0 px-6 md:px-16">
                     {/* Left lifestyle image is the DOMINANT element; the product
@@ -73,15 +111,33 @@ export default function AsStyledByYou() {
                       {/* Compact featured product card → the product's detail page */}
                       <div className="mx-auto flex w-full max-w-[19rem] flex-col items-center text-center">
                         <a href={href} className="group/card relative mb-4 block aspect-[2/3] w-full overflow-hidden bg-beige">
-                          <Image src={l.productImg} alt={l.name} fill sizes="(max-width: 768px) 80vw, 22vw" className="object-cover transition-opacity duration-500 group-hover/card:opacity-0" />
-                          <Image src={l.productImgAlt} alt="" fill sizes="(max-width: 768px) 80vw, 22vw" className="object-cover opacity-0 transition-opacity duration-500 group-hover/card:opacity-100" />
+                          <Image key={img} src={img} alt={l.name} fill sizes="(max-width: 768px) 80vw, 22vw" className="object-cover transition-opacity duration-500 group-hover/card:opacity-0" />
+                          <Image key={imgAlt} src={imgAlt} alt="" fill sizes="(max-width: 768px) 80vw, 22vw" className="object-cover opacity-0 transition-opacity duration-500 group-hover/card:opacity-100" />
                         </a>
                         <h3 className="mb-2 text-sm md:text-base">{l.name}</h3>
                         <p className="mb-3 text-xs uppercase tracking-[0.1em] text-espresso/60">{l.price}</p>
-                        <div className="mb-5 flex flex-wrap justify-center gap-1.5">
-                          {l.colors.map((c, i) => (
-                            <span key={i} className="h-3.5 w-3.5 rounded-full border border-line" style={{ background: c }} />
-                          ))}
+                        <div className="mb-5 flex flex-wrap justify-center gap-2">
+                          {l.colors.map((c, i) =>
+                            l.colors.length > 1 ? (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => pickLookColour(l, i)}
+                                aria-pressed={i === ai}
+                                aria-label="Colour"
+                                title="Colour"
+                                className={`grid place-items-center box-border h-[1.375rem] w-[1.375rem] rounded-full border transition-colors ${
+                                  i === ai ? "border-espresso" : "border-line hover:border-espresso/60"
+                                }`}
+                              >
+                                <span className="block h-4 w-4 rounded-full" style={{ backgroundColor: c }} />
+                              </button>
+                            ) : (
+                              <span key={i} className="grid place-items-center box-border h-[1.375rem] w-[1.375rem] rounded-full border border-line">
+                                <span className="block h-4 w-4 rounded-full" style={{ backgroundColor: c }} />
+                              </span>
+                            )
+                          )}
                         </div>
                         <a href={href} className="btn-lh px-8">View product</a>
                       </div>

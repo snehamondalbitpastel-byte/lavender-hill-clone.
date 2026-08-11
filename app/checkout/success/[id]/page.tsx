@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { getCustomerSession } from "@/lib/customer-auth";
 import AccountLogo from "../../../(account)/_components/AccountLogo";
 import ReceiptButton from "./ReceiptButton";
+import Money from "@/app/components/Money";
+import type { ReactNode } from "react";
 
 export const metadata: Metadata = { title: "Order confirmed - Lavender Hill Clothing" };
 
@@ -14,8 +16,6 @@ type OrderItem = {
   price: number; compareAt: number | null; qty: number; bundleDiscount: number; badge: string | null;
 };
 
-const inr = (n: number) =>
-  "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default async function OrderSuccessPage({
   params,
@@ -79,17 +79,17 @@ export default async function OrderSuccessPage({
                       <p className="text-sm">{it.title}</p>
                       <p className="text-xs text-espresso/55">{[it.colour, it.size].filter(Boolean).join(" / ")} · Qty {it.qty}</p>
                     </div>
-                    <p className="text-sm">{inr(line)}</p>
+                    <p className="text-sm"><Money inr={line} /></p>
                   </li>
                 );
               })}
             </ul>
             <div className="mt-4 border-t border-line pt-3 text-sm">
-              <Row label="Subtotal" value={inr(order.subtotal)} />
-              {order.discount > 0 && <Row label={order.discountCode ? `Discount (${order.discountCode})` : "Discounts"} value={`− ${inr(order.discount)}`} plum />}
-              <Row label="Shipping" value={order.shipping > 0 ? inr(order.shipping) : "Free"} />
+              <Row label="Subtotal" value={<Money inr={order.subtotal} />} />
+              {order.discount > 0 && <Row label={order.discountCode ? `Discount (${order.discountCode})` : "Discounts"} value={<>− <Money inr={order.discount} /></>} plum />}
+              <Row label="Shipping" value={order.shipping > 0 ? <Money inr={order.shipping} /> : "Free"} />
               <div className="mt-2 flex justify-between border-t border-line pt-2 text-base font-medium">
-                <span>Total</span><span>{inr(order.total)}</span>
+                <span>Total</span><span><Money inr={order.total} /></span>
               </div>
             </div>
           </div>
@@ -122,7 +122,7 @@ export default async function OrderSuccessPage({
   );
 }
 
-function Row({ label, value, plum }: { label: string; value: string; plum?: boolean }) {
+function Row({ label, value, plum }: { label: string; value: ReactNode; plum?: boolean }) {
   return (
     <div className="flex justify-between py-0.5">
       <span className="text-espresso/70">{label}</span>

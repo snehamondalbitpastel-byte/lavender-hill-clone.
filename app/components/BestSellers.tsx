@@ -25,9 +25,19 @@ export default function BestSellers() {
   const drag = useRef({ down: false, startX: 0, startLeft: 0, moved: false });
 
   // One card per product; strip the colour prefix so the title reads as the name.
+  // Also collect every colour of each product ({name,hex,image,hover}) so the card's
+  // swatches are clickable and switch the image (same as the shop grid).
   const items: Card[] = [];
   const seen = new Set<string>();
+  const variantsBySlug = new Map<string, { name: string; hex: string; image: string; hover: string }[]>();
   for (const c of data ?? []) {
+    if (c.colour && c.swatch) {
+      const arr = variantsBySlug.get(c.productSlug) ?? [];
+      if (!arr.some((v) => v.name === c.colour)) {
+        arr.push({ name: c.colour, hex: c.swatch, image: c.image, hover: c.hover });
+        variantsBySlug.set(c.productSlug, arr);
+      }
+    }
     if (seen.has(c.productSlug)) continue;
     seen.add(c.productSlug);
     const title =
@@ -104,7 +114,7 @@ export default function BestSellers() {
                   key={p.id}
                   className="shrink-0 snap-start w-[74vw] sm:w-[42vw] md:w-[calc((100%-4.5rem)/4)]"
                 >
-                  <ProductCard p={p} colourHint={p.colour ?? undefined} />
+                  <ProductCard p={p} colourHint={p.colour ?? undefined} variants={variantsBySlug.get(p.productSlug)} />
                 </div>
               ))}
         </div>

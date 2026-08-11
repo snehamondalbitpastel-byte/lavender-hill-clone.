@@ -56,20 +56,37 @@ export default function Hero() {
         return (
           <div
             key={slide.id}
-            className="absolute inset-0 transition-opacity duration-700 ease-in-out"
+            className="absolute inset-0 overflow-hidden"
             style={{
               opacity: isActive ? 1 : 0,
+              // Dip-to-black transition (NOT a slide/cross-blend): the leaving banner
+              // darkens out FAST to the section's black, a brief dark beat, then the
+              // incoming banner brightens IN (delayed) from black.
+              transition: isActive
+                ? "opacity 850ms ease-in 520ms"
+                : "opacity 520ms ease-out",
               pointerEvents: isActive ? "auto" : "none",
-              backgroundColor: "#a99e8e",
-              backgroundImage: `url(${slide.image}), ${
-                slide.gradient || "linear-gradient(135deg, #cfc6ba 0%, #6f6353 100%)"
-              }`,
-              backgroundSize: "cover",
-              backgroundPosition: slide.position || "center",
-              backgroundRepeat: "no-repeat",
             }}
             aria-hidden={!isActive}
           >
+            {/* Image layer — a slow, subtle, CONTINUOUS Ken Burns zoom while this
+                banner is active (the IMAGE only; the text layer below stays fixed).
+                The zoom runs longer than the autoplay so it never stalls or resets
+                visibly before the next banner. */}
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundColor: "#a99e8e",
+                backgroundImage: `url(${slide.image}), ${
+                  slide.gradient || "linear-gradient(135deg, #cfc6ba 0%, #6f6353 100%)"
+                }`,
+                backgroundSize: "cover",
+                backgroundPosition: slide.position || "center",
+                backgroundRepeat: "no-repeat",
+                animation: isActive ? `hero-zoom ${AUTOPLAY_MS + 400}ms linear forwards` : "none",
+                willChange: "transform",
+              }}
+            />
             {slide.overlay && (
               <div className="absolute inset-0" style={{ background: slide.overlay }} />
             )}
@@ -81,10 +98,14 @@ export default function Hero() {
             >
               <div className={slide.box || "max-w-212"}>
                 <h1
-                  className={`${slide.titleSize || "text-2xl md:text-3xl lg:text-[2.2rem]"} transition-all duration-500 ease-out`}
+                  className={`${slide.titleSize || "text-2xl md:text-3xl lg:text-[2.2rem]"}`}
                   style={{
                     opacity: isActive ? 1 : 0,
                     transform: isActive ? "translateY(0)" : "translateY(10px)",
+                    // Rise + fade in as the banner brightens (after the dark beat).
+                    transition: isActive
+                      ? "opacity 700ms ease-out 680ms, transform 700ms ease-out 680ms"
+                      : "opacity 300ms ease-out, transform 300ms ease-out",
                   }}
                 >
                   {slide.bold ? <strong>{slide.title}</strong> : slide.title}
@@ -93,10 +114,14 @@ export default function Hero() {
                 <div
                   className={`mt-9 flex flex-wrap gap-3 justify-center ${
                     BTN_JUSTIFY[slide.align] || BTN_JUSTIFY.center
-                  } transition-all duration-500 delay-100 ease-out`}
+                  }`}
                   style={{
                     opacity: isActive ? 1 : 0,
                     transform: isActive ? "translateY(0)" : "translateY(20px)",
+                    // A touch after the heading, so the CTA settles in last.
+                    transition: isActive
+                      ? "opacity 700ms ease-out 840ms, transform 700ms ease-out 840ms"
+                      : "opacity 300ms ease-out, transform 300ms ease-out",
                   }}
                 >
                   {slide.buttons.map((b, bi) => (

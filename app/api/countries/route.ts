@@ -1,17 +1,18 @@
 import countries from "world-countries";
+import { MARKET_CURRENCY } from "@/lib/markets";
 
-// The full country → currency list for the storefront localization selector,
-// derived dynamically from the `world-countries` ISO dataset (≈250 countries).
-// No hand-maintained list: each country carries its ISO-4217 currency; the flag
-// is rendered client-side from the 2-letter code (flag-icons). Built once and
-// cached — it never changes at runtime.
+// The country → currency list for the storefront localization selector. The SET
+// of countries and each one's display currency are matched to the live Lavender
+// Hill site (see lib/markets). Names come from the `world-countries` ISO dataset
+// (English common name; the UI localises them), flags render client-side from the
+// 2-letter code. Anything not in MARKET_CURRENCY is excluded (no extra countries).
 export const dynamic = "force-static";
 
 export function GET() {
   const list = countries
     .map((c) => {
-      const currency = Object.keys(c.currencies ?? {})[0];
-      if (!currency) return null; // skip territories with no currency
+      const currency = MARKET_CURRENCY[c.cca2];
+      if (!currency) return null; // not a market the live site offers → exclude
       return { code: c.cca2, name: c.name.common, currency };
     })
     .filter((c): c is { code: string; name: string; currency: string } => c !== null)

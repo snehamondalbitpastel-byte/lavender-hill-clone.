@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart, bundleFor } from "../components/CartProvider";
 import { useT } from "../components/LocaleProvider";
+import { useCurrency } from "../components/CurrencyProvider";
 import { COUNTRIES, INDIAN_STATES } from "@/lib/countries";
 import { loadStripe, type StripeElementLocale } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
@@ -27,8 +28,10 @@ const EMPTY: Delivery = {
   address1: "", address2: "", city: "", state: "", postcode: "", phone: "",
 };
 
-const inr = (n: number) =>
-  "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// Amounts display in the shopper's SELECTED currency (consistent with the cart /
+// drawer / product pages). Each component below aliases `useCurrency().money` as
+// `inr`, so existing `inr(...)` calls now convert. The actual charge stays INR
+// (the Stripe PaymentIntent) — this is display-only, per the site's design.
 
 // Map the site's language code to a Stripe Elements locale so the Stripe-rendered
 // payment fields (card number, expiry, CVC, the Link email/phone, "save my info",
@@ -70,6 +73,7 @@ export default function CheckoutForm({
   const router = useRouter();
   const cart = useCart();
   const { t, locale } = useT();
+  const { money: inr } = useCurrency(); // display amounts in the selected currency
   // Localize order-summary product titles + variant (colour/size) for display.
   // Stored English still drives everything server-side; only the shown text changes.
   const [tmap, setTmap] = useState<Record<string, string>>({});
@@ -679,6 +683,7 @@ function FreeOrder({ placing, onPlace }: { placing: boolean; onPlace: () => void
 
 function MockPayment({ placing, total, onPay }: { placing: boolean; total: number; onPay: () => void }) {
   const { t } = useT();
+  const { money: inr } = useCurrency();
   return (
     <div className="flex flex-col gap-3 rounded-md border border-line p-4">
       <input className={inputCls} placeholder={t("checkout.card_number", "Card number")} inputMode="numeric" />
@@ -710,6 +715,7 @@ function StripePayment({
   const stripe = useStripe();
   const elements = useElements();
   const { t } = useT();
+  const { money: inr } = useCurrency();
 
   async function pay() {
     if (!stripe || !elements || placing) return;

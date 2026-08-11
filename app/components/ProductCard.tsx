@@ -45,7 +45,7 @@ function Rating({ rating, reviews }: { rating: number; reviews: number }) {
   const half = rating - full >= 0.4;
   return (
     <span
-      className="flex items-center gap-1"
+      className="flex flex-wrap items-center gap-2 leading-normal"
       title={reviews > 0 ? `${reviews} reviews` : `${rating} out of 5`}
     >
       <span
@@ -67,13 +67,62 @@ function Rating({ rating, reviews }: { rating: number; reviews: number }) {
   );
 }
 
+// One selectable colour on the card: its swatch hex + the images to show when
+// picked. Passed by the shop grid (which has every colour's card) so the swatches
+// become clickable and switch the card image, exactly like the live site.
+export type CardVariant = { name: string; hex: string; image: string; hover: string };
+
 // Accepts a Product (homepage bestsellers) or a Card (shop grid, one per colour)
-// — both share the fields the card renders.
-export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | Card; sizeHint?: string; colourHint?: string }) {
+// — both share the fields the card renders. `variants` (optional) turns the colour
+// dots into clickable swatches that switch the shown image.
+export default function ProductCard({ p, sizeHint, colourHint, variants }: { p: Product | Card; sizeHint?: string; colourHint?: string; variants?: CardVariant[] }) {
   const cart = useCart();
   const { localize } = useCurrency();
   const [busy, setBusy] = useState(false);
   const slug = "productSlug" in p ? p.productSlug : p.slug;
+
+  // Per-colour images. If the parent handed us `variants` (shop grid / bestsellers)
+  // we switch instantly; otherwise (home rails, New In, search) we lazily fetch the
+  // product's colours the first time a swatch is clicked, then it's instant too.
+  const [fetched, setFetched] = useState<CardVariant[] | null>(null);
+  const swatchVariants = variants && variants.length > 0 ? variants : fetched;
+  // How many dots to show — the full colour list even before we've fetched images.
+  const dotHexes = swatchVariants ? swatchVariants.map((v) => v.hex) : p.colors;
+  const canSwitch = (swatchVariants?.length ?? p.colors.length) > 1;
+
+  // Which colour is currently shown. Defaults to the filtered/hinted colour, then
+  // this card's own colour, else the first — so a colour filter lands on the right
+  // swatch, and switching colours swaps the image locally.
+  const [activeIdx, setActiveIdx] = useState(() => {
+    const list = variants && variants.length > 0 ? variants : null;
+    if (!list) return 0;
+    const byHint = colourHint ? list.findIndex((v) => v.name === colourHint) : -1;
+    if (byHint >= 0) return byHint;
+    const ownHex = "swatch" in p ? p.swatch : "";
+    const byHex = ownHex ? list.findIndex((v) => v.hex === ownHex) : -1;
+    return byHex >= 0 ? byHex : 0;
+  });
+  const activeVariant =
+    swatchVariants && swatchVariants.length > 0 ? swatchVariants[Math.min(activeIdx, swatchVariants.length - 1)] : null;
+  const shownImage = activeVariant?.image || p.image;
+  const shownHover = activeVariant?.hover || activeVariant?.image || p.hover;
+  const activeColour = activeVariant?.name ?? colourHint;
+
+  // Pick a colour: highlight it now; if we don't yet have this card's per-colour
+  // images, fetch them once so the image can switch (subsequent picks are instant).
+  async function pickColour(i: number) {
+    setActiveIdx(i);
+    if (!swatchVariants) {
+      try {
+        const full = await getProduct(slug);
+        setFetched(
+          full.colours.map((c) => ({ name: c.name, hex: c.hex, image: c.image, hover: c.hover || c.image }))
+        );
+      } catch {
+        /* leave the image as-is if the fetch fails */
+      }
+    }
+  }
 
   // Quick-add from the card's "+" icon. Cards don't carry productId/stock, so we
   // resolve the full product, pick the card's colour + first size + qty 1, then
@@ -84,7 +133,7 @@ export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | 
     setBusy(true);
     try {
       const full = await getProduct(slug);
-      const wantColour = colourHint || full.colours[0]?.name || "";
+      const wantColour = activeColour || full.colours[0]?.name || "";
       const colourIndex = full.colours.findIndex((c) => c.name === wantColour);
       const col = full.colours.find((c) => c.name === wantColour) || full.colours[0];
       const wantSize = sizeHint && full.sizes.includes(sizeHint) ? sizeHint : full.sizes[0] || "";
@@ -115,7 +164,7 @@ export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | 
   // size so the detail page opens on that colour/size instead of the first.
   const base = `/products/${slug}`;
   const params = new URLSearchParams();
-  if (colourHint) params.set("colour", colourHint);
+  if (activeColour) params.set("colour", activeColour);
   if (sizeHint) params.set("size", sizeHint);
   const qs = params.toString();
   const href = qs ? `${base}?${qs}` : base;
@@ -137,14 +186,16 @@ export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | 
 
         <a href={href} className="block relative aspect-[2/3]" aria-label={p.title}>
           <Image
-            src={p.image}
+            key={shownImage}
+            src={shownImage}
             alt={p.title}
             fill
             sizes="(max-width: 700px) 50vw, 25vw"
             className="object-cover transition-opacity duration-500 group-hover:opacity-0"
           />
           <Image
-            src={p.hover}
+            key={shownHover}
+            src={shownHover}
             alt=""
             fill
             sizes="(max-width: 700px) 50vw, 25vw"
@@ -168,9 +219,15 @@ export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | 
         </button>
       </div>
 
-      {/* Info */}
-      <div className="flex flex-col items-center gap-2 pt-4 text-center">
-        <a href={href} className="text-sm hover:text-taupe transition-colors">
+      {/* Info — .product-card__info: centered, gap .75rem (grid on the live site;
+          flex-col centred is visually identical for this single centred column). */}
+      <div className="flex flex-col items-center gap-3 pt-4 text-center">
+        {/* Card title = the live theme's heading style: Raleway 300, UPPERCASE,
+            .18em tracking, h6 size — matches .card__heading on the real site. */}
+        <a
+          href={href}
+          className="font-heading font-light uppercase tracking-[0.18em] text-[0.825rem] leading-[1.7] [hyphens:none] hover:text-taupe transition-colors"
+        >
           {p.title}
         </a>
         {(() => {
@@ -189,15 +246,42 @@ export default function ProductCard({ p, sizeHint, colourHint }: { p: Product | 
           );
         })()}
 
-        <div className="flex flex-wrap justify-center gap-1.5">
-          {p.colors.map((c, i) => (
-            <span
-              key={i}
-              title="Colour"
-              className="w-3.5 h-3.5 rounded-full border border-line"
-              style={{ background: c }}
-            />
-          ))}
+        {/* Colour swatches — CLICKABLE on every card: picking one switches the shown
+            image to that colour (fetched on first click if not already loaded) and
+            marks it selected (larger, with a ring), exactly like the live site.
+            A single-colour product just shows one plain dot. */}
+        <div className="flex flex-wrap justify-center gap-2">
+          {canSwitch
+            ? dotHexes.map((hex, i) => {
+                const selected = i === activeIdx;
+                const name = swatchVariants?.[i]?.name;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => pickColour(i)}
+                    aria-label={name || "Colour"}
+                    aria-pressed={selected}
+                    title={name || "Colour"}
+                    className={`grid place-items-center box-border h-[1.375rem] w-[1.375rem] rounded-full border transition-colors ${
+                      selected ? "border-espresso" : "border-line hover:border-espresso/60"
+                    }`}
+                  >
+                    {/* Colour dot as a centred child circle: guarantees an even ring
+                        gap on all sides (both are true circles sharing a centre). */}
+                    <span className="block h-4 w-4 rounded-full" style={{ backgroundColor: hex }} />
+                  </button>
+                );
+              })
+            : dotHexes.map((hex, i) => (
+                <span
+                  key={i}
+                  title="Colour"
+                  className="grid place-items-center box-border h-[1.375rem] w-[1.375rem] rounded-full border border-line"
+                >
+                  <span className="block h-4 w-4 rounded-full" style={{ backgroundColor: hex }} />
+                </span>
+              ))}
         </div>
 
         <Rating rating={p.rating} reviews={p.reviews} />

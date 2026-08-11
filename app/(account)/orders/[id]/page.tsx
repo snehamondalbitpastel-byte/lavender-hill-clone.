@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -16,6 +17,7 @@ import ReturnRequest from "@/app/components/ReturnRequest";
 import ReturnProgressMini from "@/app/components/ReturnProgressMini";
 import ReceiptButton from "@/app/checkout/success/[id]/ReceiptButton";
 import CopyButton from "@/app/components/admin/CopyButton";
+import Money from "@/app/components/Money";
 import AccountLogo from "../../_components/AccountLogo";
 
 export const metadata: Metadata = { title: "Order details - Lavender Hill Clothing" };
@@ -26,8 +28,6 @@ type OrderItem = {
   price: number; qty: number; bundleDiscount: number;
 };
 
-const inr = (n: number) =>
-  "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmt = (d: Date | string) =>
   new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const fmtDay = (d: Date | string) =>
@@ -252,7 +252,7 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
               <p className="text-[0.95rem] font-semibold text-[#1a1a1a]">{t("Refund processed")}</p>
             </div>
             <div className="mt-3 grid gap-x-8 gap-y-2 pl-8 text-[0.85rem] sm:grid-cols-2">
-              <RefundRow label={t("Refund amount")} value={inr(order.refundedAmount)} />
+              <RefundRow label={t("Refund amount")} value={<Money inr={order.refundedAmount} />} />
               <RefundRow label={t("Refund method")} value={paymentMethodLabel(order)} />
               <RefundRow label={t("Expected credit")} value={t("2–5 business days")} />
               {refundRef && <RefundRow label={t("Reference ID")} value={refundRef} mono />}
@@ -292,16 +292,16 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
                     <p className="text-[0.9rem] text-[#1a1a1a]">{t(it.title)}</p>
                     <p className="text-[0.8rem] text-[#6b6b6b]">{[it.colour, it.size].filter(Boolean).map((v) => t(v)).join(" / ")} · {t("Qty")} {it.qty}</p>
                   </div>
-                  <p className="text-[0.9rem] text-[#1a1a1a]">{inr(it.price * it.qty - (it.bundleDiscount || 0))}</p>
+                  <p className="text-[0.9rem] text-[#1a1a1a]"><Money inr={it.price * it.qty - (it.bundleDiscount || 0)} /></p>
                 </li>
               ))}
             </ul>
             <div className="mt-4 border-t border-[#e5e5e5] pt-3 text-[0.9rem]">
-              <Row label={t("Subtotal")} value={inr(order.subtotal)} />
-              {order.discount > 0 && <Row label={order.discountCode ? `${t("Discount")} (${order.discountCode})` : t("Discounts")} value={`− ${inr(order.discount)}`} />}
-              <Row label={t("Shipping")} value={order.shipping > 0 ? inr(order.shipping) : t("Free")} />
+              <Row label={t("Subtotal")} value={<Money inr={order.subtotal} />} />
+              {order.discount > 0 && <Row label={order.discountCode ? `${t("Discount")} (${order.discountCode})` : t("Discounts")} value={<>− <Money inr={order.discount} /></>} />}
+              <Row label={t("Shipping")} value={order.shipping > 0 ? <Money inr={order.shipping} /> : t("Free")} />
               <div className="mt-2 flex justify-between border-t border-[#e5e5e5] pt-2 font-semibold text-[#1a1a1a]">
-                <span>{t("Total")}</span><span>{inr(order.total)}</span>
+                <span>{t("Total")}</span><span><Money inr={order.total} /></span>
               </div>
             </div>
           </div>
@@ -351,7 +351,7 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
                           </div>
                           <p className="mt-2 text-[0.82rem] text-[#1a1a1a]">{its.map((i) => `${t(i.title)} × ${i.qty}`).join(", ")}</p>
                           {r.reason && <p className="mt-1 text-[0.8rem] text-[#6b6b6b]">{t("Return reason:")} {r.reason}</p>}
-                          <p className="mt-1 text-[0.8rem] text-[#6b6b6b]">{t("Refund amount:")} <span className="text-[#1a1a1a]">{inr(r.refundAmount)}</span></p>
+                          <p className="mt-1 text-[0.8rem] text-[#6b6b6b]">{t("Refund amount:")} <span className="text-[#1a1a1a]"><Money inr={r.refundAmount} /></span></p>
                           {r.status === "refunded" && (
                             <p className="mt-1 text-[0.8rem] text-[#6b6b6b]">{t("Refunded on:")} <span className="text-[#1a1a1a]">{fmtDay(r.updatedAt)}</span></p>
                           )}
@@ -436,7 +436,7 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex justify-between py-0.5">
       <span className="text-[#6b6b6b]">{label}</span>
@@ -445,7 +445,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function RefundRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function RefundRow({ label, value, mono }: { label: string; value: ReactNode; mono?: boolean }) {
   return (
     <div>
       <p className="text-[0.72rem] uppercase tracking-[0.06em] text-[#6b8a5e]">{label}</p>

@@ -6,6 +6,7 @@ import LogoutButton from "../_components/LogoutButton";
 import { prisma } from "@/lib/prisma";
 import { requireCustomer } from "@/lib/customer-auth";
 import { FulfillmentBadge } from "@/app/components/OrderStatus";
+import Money from "@/app/components/Money";
 import { getLocale } from "@/lib/i18n";
 import { localizeMany } from "@/lib/i18n/translations";
 import { FULFILLMENT_LABELS } from "@/lib/order-status";
@@ -52,9 +53,6 @@ export default async function OrdersPage() {
   const tvals = await localizeMany(UI, locale);
   const tmap = new Map(UI.map((s, i) => [s, tvals[i]]));
   const t = (s: string) => tmap.get(s) ?? s;
-
-  const inr = (n: number) =>
-    "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtDate = (d: Date) =>
     new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
@@ -144,7 +142,7 @@ export default async function OrdersPage() {
                       {/* status chip on top, price below — top-right corner */}
                       <div className="flex flex-col items-end gap-2">
                         <FulfillmentBadge status={o.fulfillmentStatus} label={chipLabel} />
-                        <span className="text-[0.95rem] font-medium text-[#1a1a1a]">{inr(o.total)}</span>
+                        <span className="text-[0.95rem] font-medium text-[#1a1a1a]"><Money inr={o.total} /></span>
                       </div>
                     </Link>
                   );

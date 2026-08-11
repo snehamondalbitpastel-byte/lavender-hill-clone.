@@ -367,6 +367,28 @@
   }
 }
 
+/* Hero banner Ken Burns — a slow, subtle, continuous zoom on the active slide's
+   image (the image only, not the text). Starts slightly enlarged and eases in
+   toward natural size. Runs longer than the autoplay so it never stalls. */
+@keyframes hero-zoom {
+  from {
+    transform: scale(1.18);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes hero-zoom {
+    from {
+      transform: scale(1);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+}
+
 /* Hide the scrollbar on the mobile "text with icons" swipe carousel. */
 .no-scrollbar {
   -ms-overflow-style: none;

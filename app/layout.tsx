@@ -8,9 +8,15 @@ import { CurrencyProvider } from "./components/CurrencyProvider";
 import { LocaleProvider } from "./components/LocaleProvider";
 import { getLocale, getDictionary } from "@/lib/i18n";
 
-// Headings — matches the site's --heading-font-family: Raleway
+// Headings — matches the live site's --heading-font-family: Raleway.
+// The live theme loads Raleway as STATIC weights 300 & 400 (custom.css:
+// @import Raleway:wght@300;400). We load the exact same instances (not the
+// variable font) so headings — including product-card titles — render
+// pixel-identical to lavenderhillclothing.com instead of slightly heavier.
 const raleway = Raleway({
   subsets: ["latin"],
+  weight: ["300", "400"],
+  style: "normal",
   variable: "--font-raleway",
   display: "swap",
 });

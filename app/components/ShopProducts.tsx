@@ -109,7 +109,7 @@ export default function ShopProducts({
   const lbl = (v: string) => valueLabels[v] ?? v;
   const [sort, setSort] = useState<SortKey>("featured");
   const [sortOpen, setSortOpen] = useState(false);
-  const [layout, setLayout] = useState<Layout>("compact");
+  const [layout, setLayout] = useState<Layout>("medium"); // default to the MIDDLE grid option
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<Record<FilterKey, string[]>>({
     productType: [],
@@ -154,7 +154,8 @@ export default function ShopProducts({
         }
         if (v.sort) setSort(v.sort);
         if (typeof v.page === "number" && v.page >= 1) setPage(v.page);
-        if (v.layout) setLayout(v.layout);
+        // NOTE: layout is intentionally NOT restored — the grid always opens on the
+        // default MIDDLE (medium) option, per requirement. Filters/sort/page persist.
       }
     } catch {
       /* ignore corrupt storage */
@@ -217,6 +218,22 @@ export default function ShopProducts({
     const map = new Map<string, string>();
     for (const c of data ?? []) {
       if (c.colour && c.swatch && !map.has(c.colour)) map.set(c.colour, c.swatch);
+    }
+    return map;
+  }, [data]);
+
+  // productSlug -> its colour variants ({name, hex, image, hover}), built from the
+  // per-colour cards we already have. Passed to each ProductCard so its swatches
+  // become clickable and switch the shown image (colour order preserved).
+  const variantsBySlug = useMemo(() => {
+    const map = new Map<string, { name: string; hex: string; image: string; hover: string }[]>();
+    for (const c of data ?? []) {
+      if (!c.colour || !c.swatch) continue;
+      const arr = map.get(c.productSlug) ?? [];
+      if (!arr.some((v) => v.name === c.colour)) {
+        arr.push({ name: c.colour, hex: c.swatch, image: c.image, hover: c.hover });
+        map.set(c.productSlug, arr);
+      }
     }
     return map;
   }, [data]);
@@ -502,6 +519,8 @@ export default function ShopProducts({
                 // Open the detail page on the shown colour (the filtered colour when
                 // a colour filter is active, else the product's first colour).
                 colourHint={p.colour ?? undefined}
+                // All the product's colours → clickable swatches that switch the image.
+                variants={variantsBySlug.get(p.productSlug)}
                 // Carry the size the shopper filtered by (the first selected size
                 // this card actually offers) into the product link.
                 sizeHint={filters.size.find((s) => (p.sizes ?? []).includes(s))}
