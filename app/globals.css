@@ -372,7 +372,7 @@
    toward natural size. Runs longer than the autoplay so it never stalls. */
 @keyframes hero-zoom {
   from {
-    transform: scale(1.18);
+    transform: scale(1.24);
   }
   to {
     transform: scale(1);
@@ -387,6 +387,31 @@
       transform: scale(1);
     }
   }
+}
+
+/* Colour swatch — exact port of the live theme's .color-swatch at product-card
+   size. The colour fills the CONTENT box (centred, cover), so it sits dead-centre
+   inside the ring with an even 2px offset all around + a 1px border. Selected → the
+   ring turns dark (currentColor). Set --swatch-bg to the colour (as a gradient). */
+.color-swatch-lh {
+  box-sizing: border-box;
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: 0 0 auto; /* never shrink/grow — stays exactly 1.375rem in the flex row */
+  padding: 2px; /* --swatch-offset: even gap on every side */
+  border: 1px solid rgb(210 203 194); /* --border-color (line) */
+  border-radius: 9999px;
+  background: content-box var(--swatch-bg, transparent) no-repeat center / cover;
+  display: grid;
+  place-items: center;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+.color-swatch-lh:not(.is-selected):hover {
+  border-color: rgb(58 47 34 / 0.6);
+}
+.color-swatch-lh.is-selected {
+  border-color: currentColor; /* dark ring on the selected colour */
 }
 
 /* Hide the scrollbar on the mobile "text with icons" swipe carousel. */

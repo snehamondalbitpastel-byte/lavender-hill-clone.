@@ -263,24 +263,18 @@ export default function ProductCard({ p, sizeHint, colourHint, variants }: { p: 
                     aria-label={name || "Colour"}
                     aria-pressed={selected}
                     title={name || "Colour"}
-                    className={`grid place-items-center box-border h-[1.375rem] w-[1.375rem] rounded-full border transition-colors ${
-                      selected ? "border-espresso" : "border-line hover:border-espresso/60"
-                    }`}
-                  >
-                    {/* Colour dot as a centred child circle: guarantees an even ring
-                        gap on all sides (both are true circles sharing a centre). */}
-                    <span className="block h-4 w-4 rounded-full" style={{ backgroundColor: hex }} />
-                  </button>
+                    className={`color-swatch-lh${selected ? " is-selected" : ""}`}
+                    style={{ ["--swatch-bg"]: `linear-gradient(${hex}, ${hex})` } as React.CSSProperties}
+                  />
                 );
               })
             : dotHexes.map((hex, i) => (
                 <span
                   key={i}
                   title="Colour"
-                  className="grid place-items-center box-border h-[1.375rem] w-[1.375rem] rounded-full border border-line"
-                >
-                  <span className="block h-4 w-4 rounded-full" style={{ backgroundColor: hex }} />
-                </span>
+                  className="color-swatch-lh"
+                  style={{ ["--swatch-bg"]: `linear-gradient(${hex}, ${hex})` } as React.CSSProperties}
+                />
               ))}
         </div>
 

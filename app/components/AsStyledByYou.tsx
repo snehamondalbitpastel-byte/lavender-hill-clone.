@@ -126,16 +126,15 @@ export default function AsStyledByYou() {
                                 aria-pressed={i === ai}
                                 aria-label="Colour"
                                 title="Colour"
-                                className={`grid place-items-center box-border h-[1.375rem] w-[1.375rem] rounded-full border transition-colors ${
-                                  i === ai ? "border-espresso" : "border-line hover:border-espresso/60"
-                                }`}
-                              >
-                                <span className="block h-4 w-4 rounded-full" style={{ backgroundColor: c }} />
-                              </button>
+                                className={`color-swatch-lh${i === ai ? " is-selected" : ""}`}
+                                style={{ ["--swatch-bg"]: `linear-gradient(${c}, ${c})` } as React.CSSProperties}
+                              />
                             ) : (
-                              <span key={i} className="grid place-items-center box-border h-[1.375rem] w-[1.375rem] rounded-full border border-line">
-                                <span className="block h-4 w-4 rounded-full" style={{ backgroundColor: c }} />
-                              </span>
+                              <span
+                                key={i}
+                                className="color-swatch-lh"
+                                style={{ ["--swatch-bg"]: `linear-gradient(${c}, ${c})` } as React.CSSProperties}
+                              />
                             )
                           )}
                         </div>

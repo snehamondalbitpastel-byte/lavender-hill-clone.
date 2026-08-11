@@ -63,8 +63,8 @@ export default function Hero() {
               // darkens out FAST to the section's black, a brief dark beat, then the
               // incoming banner brightens IN (delayed) from black.
               transition: isActive
-                ? "opacity 850ms ease-in 520ms"
-                : "opacity 520ms ease-out",
+                ? "opacity 550ms ease-in 320ms"
+                : "opacity 320ms ease-out",
               pointerEvents: isActive ? "auto" : "none",
             }}
             aria-hidden={!isActive}
@@ -83,7 +83,11 @@ export default function Hero() {
                 backgroundSize: "cover",
                 backgroundPosition: slide.position || "center",
                 backgroundRepeat: "no-repeat",
-                animation: isActive ? `hero-zoom ${AUTOPLAY_MS + 400}ms linear forwards` : "none",
+                // ease-out → the zoom glides to a stop (velocity eases to 0) instead
+                // of the abrupt "jhatka" a linear stop gives. The 450ms delay + `both`
+                // holds the enlarged start during the dark beat, so the fast part of
+                // the motion plays while the banner is actually visible.
+                animation: isActive ? "hero-zoom 4200ms ease-out 450ms both" : "none",
                 willChange: "transform",
               }}
             />
@@ -104,8 +108,8 @@ export default function Hero() {
                     transform: isActive ? "translateY(0)" : "translateY(10px)",
                     // Rise + fade in as the banner brightens (after the dark beat).
                     transition: isActive
-                      ? "opacity 700ms ease-out 680ms, transform 700ms ease-out 680ms"
-                      : "opacity 300ms ease-out, transform 300ms ease-out",
+                      ? "opacity 500ms ease-out 440ms, transform 500ms ease-out 440ms"
+                      : "opacity 250ms ease-out, transform 250ms ease-out",
                   }}
                 >
                   {slide.bold ? <strong>{slide.title}</strong> : slide.title}
@@ -118,10 +122,11 @@ export default function Hero() {
                   style={{
                     opacity: isActive ? 1 : 0,
                     transform: isActive ? "translateY(0)" : "translateY(20px)",
-                    // A touch after the heading, so the CTA settles in last.
+                    // Clearly AFTER the heading (≈320ms gap) so they never rise in
+                    // together — heading first, then the CTA a beat later.
                     transition: isActive
-                      ? "opacity 700ms ease-out 840ms, transform 700ms ease-out 840ms"
-                      : "opacity 300ms ease-out, transform 300ms ease-out",
+                      ? "opacity 500ms ease-out 760ms, transform 500ms ease-out 760ms"
+                      : "opacity 250ms ease-out, transform 250ms ease-out",
                   }}
                 >
                   {slide.buttons.map((b, bi) => (

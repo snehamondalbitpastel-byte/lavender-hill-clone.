@@ -573,17 +573,28 @@ export default function ProductDetail({ id }: { id: string }) {
                 }}
                 className="relative flex-1 aspect-[2/3] overflow-hidden bg-beige cursor-zoom-in"
               >
-                {main && (
-                  <Image
-                    key={main.url}
-                    src={main.url}
-                    alt={product.title}
-                    fill
-                    priority
-                    sizes="(max-width: 1000px) 100vw, 55vw"
-                    className="object-cover"
-                  />
-                )}
+                {/* Horizontal slide track: every gallery image sits side-by-side and
+                    is preloaded, so selecting a thumbnail/colour SLIDES smoothly to it
+                    instead of swapping the src (which flashed a blank white box while
+                    the new image loaded). Mirrors the live scroll-carousel feel. */}
+                <div
+                  className="flex h-full w-full transition-transform duration-500 ease-out"
+                  style={{ transform: `translateX(-${active * 100}%)` }}
+                >
+                  {gallery.map((g, i) => (
+                    <div key={`${g.url}-${i}`} className="relative h-full w-full shrink-0">
+                      <Image
+                        src={g.url}
+                        alt={product.title}
+                        fill
+                        priority={i === 0}
+                        loading={i === 0 ? undefined : "eager"}
+                        sizes="(max-width: 1000px) 100vw, 55vw"
+                        className="object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
