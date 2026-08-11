@@ -4,8 +4,9 @@ import { prisma } from "@/lib/prisma";
 import CollectionView from "../../CollectionView";
 
 // Nested sub-category page: /collections/<parent>/<sub>. `sub` is a child
-// collection; it shows its own product grid, with the parent in the breadcrumb
-// and its sibling sub-categories as the option nav (active one highlighted).
+// collection; it shows its own product grid, with its sibling sub-categories as
+// the option nav (active one highlighted). The breadcrumb is kept flat —
+// Home / Shop / <sub> — WITHOUT the parent level, matching every other category.
 export async function generateMetadata({
   params,
 }: {
@@ -45,9 +46,8 @@ export default async function NestedCollectionPage({
     active: c.handle === sub,
   }));
 
-  const breadcrumbParent = parent
-    ? { label: parent.label, href: `/collections/${parent.handle}` }
-    : undefined;
-
-  return <CollectionView collection={collection} options={options} breadcrumbParent={breadcrumbParent} />;
+  // Breadcrumb stays flat (Home / Shop / <sub>) — no parent level. So we don't
+  // pass breadcrumbParent; CollectionView then renders the same crumb trail as a
+  // top-level category.
+  return <CollectionView collection={collection} options={options} />;
 }
