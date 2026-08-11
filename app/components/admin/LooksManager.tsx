@@ -11,6 +11,7 @@ type Look = {
   look: string;
   hotspotTop: string;
   hotspotLeft: string;
+  productSlug: string;
   name: string;
   price: string;
   productImg: string;
@@ -26,11 +27,13 @@ const inputCls =
   "border border-line rounded-md px-3 py-2 text-sm bg-white text-espresso focus:outline-none focus:border-espresso transition-colors w-full";
 const labelCls = "text-[11px] uppercase tracking-[0.1em] text-espresso/55 mb-1 block";
 const BLANK: Draft = {
-  look: "", hotspotTop: "50%", hotspotLeft: "50%", name: "", price: "",
+  look: "", hotspotTop: "50%", hotspotLeft: "50%", productSlug: "", name: "", price: "",
   productImg: "", productImgAlt: "", colors: [], href: "/shop", order: 0,
 };
 
-export default function LooksManager({ looks }: { looks: Look[] }) {
+type ProductOption = { id: number; title: string; slug: string };
+
+export default function LooksManager({ looks, products = [] }: { looks: Look[]; products?: ProductOption[] }) {
   const router = useRouter();
   const [editing, setEditing] = useState<{ id: number | null; data: Draft } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -61,8 +64,8 @@ export default function LooksManager({ looks }: { looks: Look[] }) {
 
   async function save() {
     if (!editing) return;
-    if (!editing.data.look || !editing.data.name.trim()) {
-      toast.error("Look image and product name are required.");
+    if (!editing.data.look || (!editing.data.productSlug && !editing.data.name.trim())) {
+      toast.error("Add the lifestyle image and either link a product or type a product name.");
       return;
     }
     setBusy(true);
@@ -127,7 +130,20 @@ export default function LooksManager({ looks }: { looks: Look[] }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><label className={labelCls}>Product name</label><input className={inputCls} value={editing.data.name} onChange={(e) => setField("name", e.target.value)} placeholder="e.g. Organic Cotton Scoop Neck Tank Top" /></div>
             <div><label className={labelCls}>Price (display)</label><input className={inputCls} value={editing.data.price} onChange={(e) => setField("price", e.target.value)} placeholder="Rs. 5,900.00" /></div>
-            <div className="sm:col-span-2"><label className={labelCls}>Link — “View product”</label><input className={inputCls} value={editing.data.href} onChange={(e) => setField("href", e.target.value)} placeholder="/products/organic-cotton-scoop-neck-tank-top" /></div>
+            <div className="sm:col-span-2">
+              <label className={labelCls}>Linked product <span className="normal-case text-espresso/40">(recommended)</span></label>
+              <select
+                className={inputCls}
+                value={editing.data.productSlug}
+                onChange={(e) => setField("productSlug", e.target.value)}
+              >
+                <option value="">— none (use the fallback fields below) —</option>
+                {products.map((p) => <option key={p.id} value={p.slug}>{p.title}</option>)}
+              </select>
+              <p className="text-[11px] text-espresso/45 mt-1">
+                Pick a product → its <b>name, price, images, colours & “View product” link are used automatically</b>, so the card always matches where the button goes. The name/price/image fields below are only a fallback when no product is linked.
+              </p>
+            </div>
             <div><label className={labelCls}>Hotspot top</label><input className={inputCls} value={editing.data.hotspotTop} onChange={(e) => setField("hotspotTop", e.target.value)} placeholder="50%" /></div>
             <div><label className={labelCls}>Hotspot left</label><input className={inputCls} value={editing.data.hotspotLeft} onChange={(e) => setField("hotspotLeft", e.target.value)} placeholder="50%" /></div>
             <div><label className={labelCls}>Order</label><input type="number" className={inputCls} value={editing.data.order} onChange={(e) => setField("order", Number(e.target.value))} /></div>

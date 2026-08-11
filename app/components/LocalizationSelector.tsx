@@ -30,6 +30,7 @@ function symbolOf(currency: string): string {
 export default function LocalizationSelector() {
   const { setCurrency } = useCurrency();
   const [open, setOpen] = useState(false);
+  const [switching, setSwitching] = useState(false); // brief loader on currency change
   const [countries, setCountries] = useState<Country[]>([]);
   const [selected, setSelected] = useState<Country>(DEFAULT);
   const [query, setQuery] = useState("");
@@ -86,17 +87,29 @@ export default function LocalizationSelector() {
 
   function choose(c: Country) {
     setSelected(c);
+    setOpen(false);
+    setQuery("");
+    // The conversion itself is instant (client-side), so a brief full-screen
+    // loader confirms the tap registered and every price is being re-priced —
+    // otherwise the change can feel like "nothing happened". Shown on ALL pages
+    // because this selector lives in the header.
+    setSwitching(true);
     setCurrency(c.currency);
     try {
       localStorage.setItem(KEY, JSON.stringify(c));
     } catch {
       /* ignore */
     }
-    setOpen(false);
-    setQuery("");
+    window.setTimeout(() => setSwitching(false), 550);
   }
 
   return (
+    <>
+    {switching && (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-cream/70 backdrop-blur-[1px]" role="status" aria-live="polite">
+        <span className="h-9 w-9 animate-spin rounded-full border-2 border-espresso/20 border-t-espresso" aria-hidden="true" />
+      </div>
+    )}
     <div className="relative hidden lg:block" ref={ref}>
       <button
         type="button"
@@ -156,5 +169,6 @@ export default function LocalizationSelector() {
         </div>
       )}
     </div>
+    </>
   );
 }

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { EMPTY_CONTENT, type ProductContent } from "@/lib/products";
+import { UK_SIZES, LETTER_SIZES } from "@/lib/size-guide";
 
 // stock: "" = not tracked (unlimited) · a number (as string) = units of THIS colour
 // (fallback, used only when the product has no sizes). sizeStock: per-size units
@@ -30,11 +31,11 @@ export type ProductFormData = {
   content: ProductContent;
   bestseller: boolean;
   isNew: boolean;
+  hiddenFromShop: boolean;
+  sizeChart: boolean;
 };
 
 type Category = { handle: string; label: string };
-
-const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 const inputCls =
   "border border-line rounded-md px-3 py-2 text-sm bg-white text-espresso focus:outline-none focus:border-espresso transition-colors w-full";
 const labelCls = "text-xs uppercase tracking-[0.1em] text-espresso/60 mb-1.5 block";
@@ -93,6 +94,8 @@ export default function ProductForm({
     content: initial?.content ?? structuredClone(EMPTY_CONTENT),
     bestseller: initial?.bestseller ?? false,
     isNew: initial?.isNew ?? false,
+    hiddenFromShop: initial?.hiddenFromShop ?? false,
+    sizeChart: initial?.sizeChart ?? false,
   });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -114,8 +117,17 @@ export default function ProductForm({
   const compareSave = compareNum > priceNum && priceNum > 0 ? Math.round(compareNum - priceNum) : 0;
   const compareInvalid = compareNum > 0 && priceNum > 0 && compareNum <= priceNum;
   const rs = (n: number) => "Rs. " + Math.round(n).toLocaleString("en-US") + ".00";
+  // The size palette a product picks from depends on `sizeChart`: UK 8–16 when on,
+  // the letter sizes (XS…XXL) when off. Stored size labels are these strings verbatim.
+  const sizePalette = f.sizeChart ? UK_SIZES : LETTER_SIZES;
   const toggleSize = (s: string) =>
     set("sizes", f.sizes.includes(s) ? f.sizes.filter((x) => x !== s) : [...f.sizes, s]);
+  // Flipping the size-chart flag swaps palettes, so drop any selected sizes that
+  // don't belong to the new one (an "XS" can't linger on a UK-sized product).
+  const toggleSizeChart = (on: boolean) => {
+    const palette = on ? UK_SIZES : LETTER_SIZES;
+    setF((s) => ({ ...s, sizeChart: on, sizes: s.sizes.filter((x) => palette.includes(x)) }));
+  };
   const setColour = (i: number, patch: Partial<Colour>) =>
     set("colours", f.colours.map((c, j) => (j === i ? { ...c, ...patch } : c)));
   const setColourSize = (i: number, size: string, value: string) =>
@@ -262,15 +274,28 @@ export default function ProductForm({
           </section>
 
           <section className={cardCls}>
-            <h2 className="text-sm uppercase tracking-[0.1em] text-espresso/70 mb-4">Sizes</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm uppercase tracking-[0.1em] text-espresso/70">Sizes</h2>
+              {/* Size-chart toggle: switches the palette below to UK 8–16 and, on the
+                  storefront, shows a "Size chart" link opening the shared Size Guide. */}
+              <label className="flex items-center gap-2 text-xs text-espresso cursor-pointer select-none">
+                <input type="checkbox" checked={f.sizeChart} onChange={(e) => toggleSizeChart(e.target.checked)} className="w-4 h-4 accent-espresso" />
+                Use size chart (UK&nbsp;8–16)
+              </label>
+            </div>
             <div className="flex flex-wrap gap-2">
-              {SIZES.map((s) => (
+              {sizePalette.map((s) => (
                 <button key={s} type="button" onClick={() => toggleSize(s)}
                   className={`px-4 py-2 rounded-md text-sm border transition-colors ${f.sizes.includes(s) ? "bg-espresso text-cream border-espresso" : "bg-white text-espresso/70 border-line hover:border-espresso/40"}`}>
                   {s}
                 </button>
               ))}
             </div>
+            {f.sizeChart && (
+              <p className="text-[11px] text-espresso/45 mt-3">
+                Shoppers see a <b>“Size chart”</b> link that opens the shared measurements guide, and sizes show as UK&nbsp;8–16. Stock is still set per size below.
+              </p>
+            )}
           </section>
 
         </div>
@@ -360,9 +385,16 @@ export default function ProductForm({
           <input type="checkbox" checked={f.isNew} onChange={(e) => set("isNew", e.target.checked)} className="w-4 h-4 accent-espresso" />
           Show on New In page
         </label>
-        <label className="flex items-center gap-2 text-sm text-espresso cursor-pointer mb-5">
+        <label className="flex items-center gap-2 text-sm text-espresso cursor-pointer mb-3">
           <input type="checkbox" checked={f.bestseller} onChange={(e) => set("bestseller", e.target.checked)} className="w-4 h-4 accent-espresso" />
           Feature in “Our Bestselling T-Shirts” (home page)
+        </label>
+        <label className="flex items-start gap-2 text-sm text-espresso cursor-pointer mb-5">
+          <input type="checkbox" checked={f.hiddenFromShop} onChange={(e) => set("hiddenFromShop", e.target.checked)} className="w-4 h-4 accent-espresso mt-0.5" />
+          <span>
+            Hide from shop &amp; search
+            <span className="block text-xs text-espresso/55">Keep the product page live (so it can be used in “As Styled By You”), but don’t list it in Shop, collections, search, or recommendations.</span>
+          </span>
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl">
           <div>

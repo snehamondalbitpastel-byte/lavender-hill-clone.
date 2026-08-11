@@ -4,7 +4,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireCustomer } from "@/lib/customer-auth";
-import { canRequestReturn, returnDeadline, returnWindowOpen, RETURN_WINDOW_DAYS } from "@/lib/order-status";
+import { canRequestReturn, returnDeadline, returnWindowOpen, RETURN_WINDOW_DAYS, FULFILLMENT_LABELS, PAYMENT_LABELS, RETURN_LABELS } from "@/lib/order-status";
+import { getLocale } from "@/lib/i18n";
+import { localizeMany } from "@/lib/i18n/translations";
 import { getReturnableItems } from "@/lib/returns";
 import { FulfillmentBadge, PaymentBadge, ReturnBadge } from "@/app/components/OrderStatus";
 import OrderTimeline from "@/app/components/OrderTimeline";
@@ -175,6 +177,40 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
     }
   }
 
+  // ── Translate every visible string for the visitor's language ──────────────
+  // Fixed UI + status labels + step labels + dynamic (item titles, colours,
+  // sizes, timeline messages) go through the engine+cache in one batch. A full
+  // reload on language change re-renders this server component in the new locale.
+  const locale = await getLocale();
+  const returnItemTitles = returns.flatMap((r) => {
+    try { return (JSON.parse(r.items || "[]") as { title: string }[]).map((x) => x.title); } catch { return []; }
+  });
+  const UI = [
+    "All orders", "Order", "Placed on", "Order ID:", "Invoice:",
+    "Refund processed", "Refund amount", "Refund method", "Expected credit", "2–5 business days", "Reference ID",
+    "Order status", "Order placed", "Order cancelled", "Processing", "Shipped", "Delivered",
+    "Return initiated", "Return rejected", "Return cancelled", "Item pickup", "Refund",
+    "Order summary", "Qty", "Subtotal", "Discount", "Discounts", "Shipping", "Free", "Total",
+    "Delivery details", "Payment details", "Status", "Method", "Paid on", "Test payment", "Card",
+    "Returns", "Return reason:", "Refund amount:", "Refunded on:", "Return via", "Return progress",
+    "Returns are accepted until", "— within {n} days of delivery.", "The {n}-day return window closed",
+    "on", "This order is no longer eligible for a return.", "Returns can be requested within {n} days of delivery.",
+    "Activity timeline", "Return", "Continue shopping", "Need help?",
+    ...Object.values(FULFILLMENT_LABELS), ...Object.values(PAYMENT_LABELS), ...Object.values(RETURN_LABELS),
+    ...items.map((i) => i.title), ...items.map((i) => i.colour), ...items.map((i) => i.size),
+    ...returnItemTitles, ...publicEvents.map((e) => e.message),
+  ].filter(Boolean);
+  const tvals = await localizeMany(UI, locale);
+  const tmap = new Map(UI.map((s, i) => [s, tvals[i]]));
+  const t = (s: string) => (s ? tmap.get(s) ?? s : s);
+  const stepsT = steps.map((s) => ({ ...s, label: t(s.label) }));
+  const orderEventsT = orderEvents.map((e) => ({ ...e, message: t(e.message) }));
+  const returnEventsT = returnEvents.map((e) => ({ ...e, message: t(e.message) }));
+  const publicEventsT = publicEvents.map((e) => ({ ...e, message: t(e.message) }));
+  const flabel = (s: string) => t(FULFILLMENT_LABELS[s as keyof typeof FULFILLMENT_LABELS] ?? s);
+  const plabel = (s: string) => t(PAYMENT_LABELS[s as keyof typeof PAYMENT_LABELS] ?? s);
+  const rlabel = (s: string) => t(RETURN_LABELS[s as keyof typeof RETURN_LABELS] ?? s);
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="mx-auto flex w-full max-w-[1000px] items-center justify-between px-6 py-6 md:px-10">
@@ -189,21 +225,21 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
       </header>
 
       <main className="mx-auto w-full max-w-[1000px] flex-1 px-6 py-6 md:px-10">
-        <Link href="/orders" className="text-[0.85rem] text-[#8f7060] transition-colors hover:text-[#1a1a1a]">← All orders</Link>
+        <Link href="/orders" className="text-[0.85rem] text-[#8f7060] transition-colors hover:text-[#1a1a1a]">← {t("All orders")}</Link>
 
         <div className="mt-5 flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="text-[1.5rem] font-bold text-[#1a1a1a]">Order {order.orderNumber}</h1>
+              <h1 className="text-[1.5rem] font-bold text-[#1a1a1a]">{t("Order")} {order.orderNumber}</h1>
               <CopyButton text={order.orderNumber} label="Copy order number" />
             </div>
             <p className="mt-1 text-[0.85rem] text-[#6b6b6b]">
-              Placed on {placed} · Order ID: {order.orderNumber} · Invoice: INV-{order.orderNumber.replace(/^LH/, "")}
+              {t("Placed on")} {placed} · {t("Order ID:")} {order.orderNumber} · {t("Invoice:")} INV-{order.orderNumber.replace(/^LH/, "")}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <FulfillmentBadge status={order.fulfillmentStatus} />
-            <PaymentBadge status={order.paymentStatus} />
+            <FulfillmentBadge status={order.fulfillmentStatus} label={flabel(order.fulfillmentStatus)} />
+            <PaymentBadge status={order.paymentStatus} label={plabel(order.paymentStatus)} />
           </div>
         </div>
 
@@ -213,21 +249,21 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#307a07] text-white">
                 <svg width="14" viewBox="0 0 24 24" fill="none"><path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </span>
-              <p className="text-[0.95rem] font-semibold text-[#1a1a1a]">Refund processed</p>
+              <p className="text-[0.95rem] font-semibold text-[#1a1a1a]">{t("Refund processed")}</p>
             </div>
             <div className="mt-3 grid gap-x-8 gap-y-2 pl-8 text-[0.85rem] sm:grid-cols-2">
-              <RefundRow label="Refund amount" value={inr(order.refundedAmount)} />
-              <RefundRow label="Refund method" value={paymentMethodLabel(order)} />
-              <RefundRow label="Expected credit" value="2–5 business days" />
-              {refundRef && <RefundRow label="Reference ID" value={refundRef} mono />}
+              <RefundRow label={t("Refund amount")} value={inr(order.refundedAmount)} />
+              <RefundRow label={t("Refund method")} value={paymentMethodLabel(order)} />
+              <RefundRow label={t("Expected credit")} value={t("2–5 business days")} />
+              {refundRef && <RefundRow label={t("Reference ID")} value={refundRef} mono />}
             </div>
           </div>
         )}
 
         {/* Status stepper + actions */}
         <div className="mt-6 rounded-xl border border-[#e5e5e5] bg-white p-6">
-          <h2 className="mb-5 text-[0.8rem] uppercase tracking-[0.1em] text-[#6b6b6b]">Order status</h2>
-          <OrderProgress steps={steps} animate />
+          <h2 className="mb-5 text-[0.8rem] uppercase tracking-[0.1em] text-[#6b6b6b]">{t("Order status")}</h2>
+          <OrderProgress steps={stepsT} animate />
           <div className="mt-6 flex flex-wrap gap-3 border-t border-[#eee] pt-5">
             {order.trackingNumber && order.fulfillmentStatus !== "cancelled" && (
               <TrackButton carrier={order.trackingCarrier} trackingNumber={order.trackingNumber} />
@@ -245,7 +281,7 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
         {/* Order summary | (Delivery + Payment in one card) — two columns, natural height */}
         <div className="mt-6 grid gap-6 md:grid-cols-2 md:items-start">
           <div className="rounded-xl border border-[#e5e5e5] bg-white p-5">
-            <h2 className="mb-4 text-[0.8rem] uppercase tracking-[0.1em] text-[#6b6b6b]">Order summary</h2>
+            <h2 className="mb-4 text-[0.8rem] uppercase tracking-[0.1em] text-[#6b6b6b]">{t("Order summary")}</h2>
             <ul className="flex flex-col gap-4">
               {items.map((it, i) => (
                 <li key={i} className="flex gap-3">
@@ -253,42 +289,42 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
                     {it.image && <Image src={it.image} alt="" fill sizes="48px" className="object-cover" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.9rem] text-[#1a1a1a]">{it.title}</p>
-                    <p className="text-[0.8rem] text-[#6b6b6b]">{[it.colour, it.size].filter(Boolean).join(" / ")} · Qty {it.qty}</p>
+                    <p className="text-[0.9rem] text-[#1a1a1a]">{t(it.title)}</p>
+                    <p className="text-[0.8rem] text-[#6b6b6b]">{[it.colour, it.size].filter(Boolean).map((v) => t(v)).join(" / ")} · {t("Qty")} {it.qty}</p>
                   </div>
                   <p className="text-[0.9rem] text-[#1a1a1a]">{inr(it.price * it.qty - (it.bundleDiscount || 0))}</p>
                 </li>
               ))}
             </ul>
             <div className="mt-4 border-t border-[#e5e5e5] pt-3 text-[0.9rem]">
-              <Row label="Subtotal" value={inr(order.subtotal)} />
-              {order.discount > 0 && <Row label={order.discountCode ? `Discount (${order.discountCode})` : "Discounts"} value={`− ${inr(order.discount)}`} />}
-              <Row label="Shipping" value={order.shipping > 0 ? inr(order.shipping) : "Free"} />
+              <Row label={t("Subtotal")} value={inr(order.subtotal)} />
+              {order.discount > 0 && <Row label={order.discountCode ? `${t("Discount")} (${order.discountCode})` : t("Discounts")} value={`− ${inr(order.discount)}`} />}
+              <Row label={t("Shipping")} value={order.shipping > 0 ? inr(order.shipping) : t("Free")} />
               <div className="mt-2 flex justify-between border-t border-[#e5e5e5] pt-2 font-semibold text-[#1a1a1a]">
-                <span>Total</span><span>{inr(order.total)}</span>
+                <span>{t("Total")}</span><span>{inr(order.total)}</span>
               </div>
             </div>
           </div>
 
           {/* Delivery + Payment in ONE card, split by a divider line */}
           <div className="rounded-xl border border-[#e5e5e5] bg-white p-5 text-[0.9rem]">
-            <h2 className="mb-3 text-[0.8rem] uppercase tracking-[0.1em] text-[#6b6b6b]">Delivery details</h2>
+            <h2 className="mb-3 text-[0.8rem] uppercase tracking-[0.1em] text-[#6b6b6b]">{t("Delivery details")}</h2>
             <div className="leading-relaxed">
               {addressLines.length > 0 ? addressLines.map((l, i) => <p key={i} className="text-[#333]">{l}</p>) : <p className="text-[#9b9b9b]">—</p>}
             </div>
 
             <div className="mt-4 border-t border-[#e5e5e5] pt-4">
-              <h2 className="mb-3 text-[0.8rem] uppercase tracking-[0.1em] text-[#6b6b6b]">Payment details</h2>
+              <h2 className="mb-3 text-[0.8rem] uppercase tracking-[0.1em] text-[#6b6b6b]">{t("Payment details")}</h2>
               <div className="flex items-center justify-between py-0.5">
-                <span className="text-[#6b6b6b]">Status</span>
-                <PaymentBadge status={order.paymentStatus} />
+                <span className="text-[#6b6b6b]">{t("Status")}</span>
+                <PaymentBadge status={order.paymentStatus} label={plabel(order.paymentStatus)} />
               </div>
               <div className="flex items-center justify-between py-0.5">
-                <span className="text-[#6b6b6b]">Method</span>
+                <span className="text-[#6b6b6b]">{t("Method")}</span>
                 <span className="text-[#1a1a1a]">{paymentMethodLabel(order)}</span>
               </div>
               <div className="flex items-center justify-between py-0.5">
-                <span className="text-[#6b6b6b]">Paid on</span>
+                <span className="text-[#6b6b6b]">{t("Paid on")}</span>
                 <span className="text-[#1a1a1a]">{fmtDay(order.createdAt)}</span>
               </div>
             </div>
@@ -298,7 +334,7 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
         {/* Returns — full width, appears under the three cards once eligible */}
         {(returns.length > 0 || order.fulfillmentStatus === "delivered") && (
           <div className="mt-6 rounded-xl border border-[#e5e5e5] bg-white p-6">
-            <h2 className="mb-4 text-[0.8rem] uppercase tracking-[0.1em] text-[#6b6b6b]">Returns</h2>
+            <h2 className="mb-4 text-[0.8rem] uppercase tracking-[0.1em] text-[#6b6b6b]">{t("Returns")}</h2>
             {returns.length > 0 && (
               <ul className="mb-4 flex flex-col gap-3">
                 {returns.map((r) => {
@@ -311,16 +347,16 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
                         <div>
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-[0.9rem] font-medium text-[#1a1a1a]">{r.returnNumber}</p>
-                            <ReturnBadge status={r.status} />
+                            <ReturnBadge status={r.status} label={rlabel(r.status)} />
                           </div>
-                          <p className="mt-2 text-[0.82rem] text-[#1a1a1a]">{its.map((i) => `${i.title} × ${i.qty}`).join(", ")}</p>
-                          {r.reason && <p className="mt-1 text-[0.8rem] text-[#6b6b6b]">Return reason: {r.reason}</p>}
-                          <p className="mt-1 text-[0.8rem] text-[#6b6b6b]">Refund amount: <span className="text-[#1a1a1a]">{inr(r.refundAmount)}</span></p>
+                          <p className="mt-2 text-[0.82rem] text-[#1a1a1a]">{its.map((i) => `${t(i.title)} × ${i.qty}`).join(", ")}</p>
+                          {r.reason && <p className="mt-1 text-[0.8rem] text-[#6b6b6b]">{t("Return reason:")} {r.reason}</p>}
+                          <p className="mt-1 text-[0.8rem] text-[#6b6b6b]">{t("Refund amount:")} <span className="text-[#1a1a1a]">{inr(r.refundAmount)}</span></p>
                           {r.status === "refunded" && (
-                            <p className="mt-1 text-[0.8rem] text-[#6b6b6b]">Refunded on: <span className="text-[#1a1a1a]">{fmtDay(r.updatedAt)}</span></p>
+                            <p className="mt-1 text-[0.8rem] text-[#6b6b6b]">{t("Refunded on:")} <span className="text-[#1a1a1a]">{fmtDay(r.updatedAt)}</span></p>
                           )}
                           {r.returnTrackingNumber && (
-                            <p className="mt-1 text-[0.78rem] text-[#5b4b9b]">Return via {r.returnCarrier} · {r.returnTrackingNumber}</p>
+                            <p className="mt-1 text-[0.78rem] text-[#5b4b9b]">{t("Return via")} {r.returnCarrier} · {r.returnTrackingNumber}</p>
                           )}
                           {r.adminNote && <p className="mt-1 text-[0.78rem] text-[#a23140]">{r.adminNote}</p>}
                           {rimgs.length > 0 && (
@@ -335,7 +371,7 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
                         </div>
                         {/* return progress */}
                         <div className="sm:border-l sm:border-[#eee] sm:pl-4">
-                          <p className="mb-2 text-[0.7rem] uppercase tracking-[0.1em] text-[#a7a29b]">Return progress</p>
+                          <p className="mb-2 text-[0.7rem] uppercase tracking-[0.1em] text-[#a7a29b]">{t("Return progress")}</p>
                           <ReturnProgressMini status={r.status} times={returnTimes} />
                         </div>
                       </div>
@@ -349,51 +385,51 @@ export default async function CustomerOrderDetail({ params }: { params: Promise<
                 orderId={order.id}
                 items={returnable}
                 note={returnBy ? (
-                  <>Returns are accepted until <span className="font-medium text-[#1a1a1a]">{fmtDay(returnBy)}</span> — within {RETURN_WINDOW_DAYS} days of delivery.</>
+                  <>{t("Returns are accepted until")} <span className="font-medium text-[#1a1a1a]">{fmtDay(returnBy)}</span> {t("— within {n} days of delivery.").replace("{n}", String(RETURN_WINDOW_DAYS))}</>
                 ) : null}
               />
             ) : returnWindowClosed ? (
               <p className="text-[0.82rem] text-[#a23140]">
-                The {RETURN_WINDOW_DAYS}-day return window closed{returnBy ? ` on ${fmtDay(returnBy)}` : ""}. This order is no longer eligible for a return.
+                {t("The {n}-day return window closed").replace("{n}", String(RETURN_WINDOW_DAYS))}{returnBy ? ` ${t("on")} ${fmtDay(returnBy)}` : ""}. {t("This order is no longer eligible for a return.")}
               </p>
             ) : returnable.length === 0 && returns.length > 0 ? (
               null
             ) : returns.length === 0 ? (
               // Only the "you can start a return" hint — hidden once a return exists.
-              <p className="text-[0.82rem] text-[#6b6b6b]">Returns can be requested within {RETURN_WINDOW_DAYS} days of delivery.</p>
+              <p className="text-[0.82rem] text-[#6b6b6b]">{t("Returns can be requested within {n} days of delivery.").replace("{n}", String(RETURN_WINDOW_DAYS))}</p>
             ) : null}
           </div>
         )}
 
         {/* Activity timeline — full width */}
         <div className="mt-6 rounded-xl border border-[#e5e5e5] bg-white p-5">
-          <h2 className="mb-4 text-[0.8rem] uppercase tracking-[0.1em] text-[#6b6b6b]">Activity timeline</h2>
-          {returnEvents.length > 0 ? (
+          <h2 className="mb-4 text-[0.8rem] uppercase tracking-[0.1em] text-[#6b6b6b]">{t("Activity timeline")}</h2>
+          {returnEventsT.length > 0 ? (
             <div className="flex flex-col gap-5">
               <div>
-                <p className="mb-2 text-[0.68rem] uppercase tracking-[0.12em] text-[#a7a29b]">Order</p>
-                <OrderTimeline events={orderEvents} />
+                <p className="mb-2 text-[0.68rem] uppercase tracking-[0.12em] text-[#a7a29b]">{t("Order")}</p>
+                <OrderTimeline events={orderEventsT} />
               </div>
               <div className="border-t border-[#eee] pt-4">
-                <p className="mb-2 text-[0.68rem] uppercase tracking-[0.12em] text-[#a7a29b]">Return</p>
-                <OrderTimeline events={returnEvents} />
+                <p className="mb-2 text-[0.68rem] uppercase tracking-[0.12em] text-[#a7a29b]">{t("Return")}</p>
+                <OrderTimeline events={returnEventsT} />
               </div>
             </div>
           ) : (
-            <OrderTimeline events={publicEvents} />
+            <OrderTimeline events={publicEventsT} />
           )}
         </div>
       </main>
 
       <footer className="mx-auto flex w-full max-w-[1000px] flex-wrap items-center justify-center gap-3 px-6 py-8 md:px-10">
         <Link href="/shop" className="rounded-md bg-[#847a8a] px-5 py-2.5 text-[0.9rem] text-white transition-colors hover:bg-[#736979]">
-          Continue shopping
+          {t("Continue shopping")}
         </Link>
         <a
           href={`mailto:support@lavenderhill.example?subject=${encodeURIComponent(`Help with order ${order.orderNumber}`)}`}
           className="rounded-md border border-[#d4d0cb] bg-white px-5 py-2.5 text-[0.9rem] text-[#1a1a1a] transition-colors hover:bg-[#faf9f7]"
         >
-          Need help?
+          {t("Need help?")}
         </a>
       </footer>
     </div>

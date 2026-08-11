@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type IconName =
-  | "dashboard" | "orders" | "returns" | "discounts" | "products" | "categories" | "customers" | "content" | "hero" | "collections" | "looks" | "languages";
+  | "dashboard" | "orders" | "returns" | "discounts" | "products" | "categories" | "customers" | "reviews" | "content" | "pages" | "hero" | "collections" | "menu" | "looks" | "languages";
 
 const NAV: { href: string; label: string; icon: IconName; exact?: boolean }[] = [
   { href: "/admin", label: "Dashboard", icon: "dashboard", exact: true },
@@ -17,9 +17,12 @@ const NAV: { href: string; label: string; icon: IconName; exact?: boolean }[] = 
   { href: "/admin/products", label: "Products", icon: "products" },
   { href: "/admin/categories", label: "Collections", icon: "categories" },
   { href: "/admin/customers", label: "Customers", icon: "customers" },
+  { href: "/admin/reviews", label: "Reviews", icon: "reviews" },
   { href: "/admin/content", label: "Content", icon: "content" },
+  { href: "/admin/pages", label: "Pages", icon: "pages" },
   { href: "/admin/hero", label: "Hero", icon: "hero" },
   { href: "/admin/collections", label: "Home Tiles", icon: "collections" },
+  { href: "/admin/menu", label: "Shop Menu", icon: "menu" },
   { href: "/admin/looks", label: "As Styled By You", icon: "looks" },
   { href: "/admin/languages", label: "Languages", icon: "languages" },
 ];
@@ -45,6 +48,8 @@ function NavIcon({ name }: { name: IconName }) {
       return <svg viewBox="0 0 24 24" className={cls}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" {...p} /><circle cx="9" cy="7" r="4" {...p} /><path d="M22 21v-2a4 4 0 0 0-3-3.87" {...p} /><path d="M16 3.13a4 4 0 0 1 0 7.75" {...p} /></svg>;
     case "content": // file-text
       return <svg viewBox="0 0 24 24" className={cls}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" {...p} /><path d="M14 2v4a2 2 0 0 0 2 2h4" {...p} /><path d="M16 13H8" {...p} /><path d="M16 17H8" {...p} /><path d="M10 9H8" {...p} /></svg>;
+    case "pages": // newspaper
+      return <svg viewBox="0 0 24 24" className={cls}><path d="M15 18h-5" {...p} /><path d="M18 14h-8" {...p} /><rect width="8" height="4" x="10" y="6" rx="1" {...p} /><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" {...p} /></svg>;
     case "hero": // image
       return <svg viewBox="0 0 24 24" className={cls}><rect width="18" height="18" x="3" y="3" rx="2" {...p} /><circle cx="9" cy="9" r="2" {...p} /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" {...p} /></svg>;
     case "collections": // layout-grid
@@ -53,6 +58,10 @@ function NavIcon({ name }: { name: IconName }) {
       return <svg viewBox="0 0 24 24" className={cls}><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" {...p} /></svg>;
     case "languages": // globe
       return <svg viewBox="0 0 24 24" className={cls}><circle cx="12" cy="12" r="10" {...p} /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" {...p} /><path d="M2 12h20" {...p} /></svg>;
+    case "menu": // menu (align-justify)
+      return <svg viewBox="0 0 24 24" className={cls}><line x1="3" x2="21" y1="6" y2="6" {...p} /><line x1="3" x2="21" y1="12" y2="12" {...p} /><line x1="3" x2="21" y1="18" y2="18" {...p} /></svg>;
+    case "reviews": // message-square-text
+      return <svg viewBox="0 0 24 24" className={cls}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" {...p} /><path d="M7 9h10" {...p} /><path d="M7 13h6" {...p} /></svg>;
   }
 }
 

@@ -55,7 +55,7 @@ export async function GET(
   // primary category; if none (or the product has no category), fall back to any
   // that share a collection tag; finally, fall back to any other products — so the
   // section is never empty when there's more than one product in the store.
-  const notThis = { id: { not: product.id } };
+  const notThis = { id: { not: product.id }, hiddenFromShop: false };
   let relatedRows = product.category
     ? await prisma.product.findMany({
         where: { ...notThis, category: product.category },
@@ -110,6 +110,8 @@ export async function GET(
     // reads the SELECTED colour's stock. null on a colour = untracked.
     colours,
     sizes,
+    // UK 8–16 sizing + "Size chart" modal on the detail page (constant guide).
+    sizeChart: product.sizeChart,
     content,
     related,
   };
@@ -122,6 +124,7 @@ type LocalizableProduct = {
   description: string;
   productType: string;
   badge: string | null;
+  sizes: string[];
   colours: Colour[];
   related: { title: string; [k: string]: unknown }[];
   content: ReturnType<typeof normalizeContent>;
@@ -142,6 +145,7 @@ async function localizeProduct<T extends LocalizableProduct>(
     payload.description,
     payload.productType ?? "",
     payload.badge ?? "",
+    ...payload.sizes,
     ...payload.colours.map((x) => x.name),
     ...payload.related.map((x) => x.title),
     ...c.materialMatters.map((x) => x.label),
@@ -165,6 +169,7 @@ async function localizeProduct<T extends LocalizableProduct>(
   payload.description = tr(payload.description);
   if (payload.productType) payload.productType = tr(payload.productType);
   if (payload.badge) payload.badge = tr(payload.badge);
+  payload.sizes = payload.sizes.map(tr);
   payload.colours = payload.colours.map((x) => ({ ...x, name: tr(x.name) }));
   payload.related = payload.related.map((x) => ({ ...x, title: tr(x.title) }));
   payload.content = {

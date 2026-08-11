@@ -21,6 +21,7 @@ export async function GET(request: Request) {
   const [productRows, catRows] = await Promise.all([
     prisma.product.findMany({
       where: {
+        hiddenFromShop: false, // look-only / hidden products never appear in search
         OR: [
           { title: { contains: q, mode: "insensitive" } },
           { productType: { contains: q, mode: "insensitive" } },

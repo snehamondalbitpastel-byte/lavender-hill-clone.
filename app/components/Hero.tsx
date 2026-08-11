@@ -27,7 +27,7 @@ const BTN_VARIANT: Record<string, string> = {
 const AUTOPLAY_MS = 6000;
 
 export default function Hero() {
-  const { data } = useFetch<HeroSlide[]>(getHero);
+  const { data } = useFetch<HeroSlide[]>(getHero, "hero");
   const slides = data ?? [];
   const [active, setActive] = useState(0);
 

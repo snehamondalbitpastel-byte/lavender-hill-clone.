@@ -109,6 +109,8 @@ export type ProductData = {
   content: string; // JSON (ProductContent)
   bestseller: boolean;
   isNew: boolean;
+  hiddenFromShop: boolean;
+  sizeChart: boolean; // UK 8–16 sizing + "Size chart" modal on the detail page
 };
 
 export function slugify(s: string): string {
@@ -217,6 +219,8 @@ export function normalizeProduct(body: any): Result {
     content: JSON.stringify(normalizeContent(body.content)),
     bestseller: !!body.bestseller,
     isNew: !!body.isNew,
+    hiddenFromShop: !!body.hiddenFromShop,
+    sizeChart: !!body.sizeChart,
   };
 
   return { ok: true, data, slug: slugify(body.slug || title) };

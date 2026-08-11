@@ -66,6 +66,8 @@ export default async function EditProductPage({
     content: parseContent(p.content),
     bestseller: p.bestseller,
     isNew: p.isNew,
+    hiddenFromShop: p.hiddenFromShop,
+    sizeChart: p.sizeChart,
   };
 
   return (

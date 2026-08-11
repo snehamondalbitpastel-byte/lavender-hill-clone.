@@ -1,20 +1,21 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFetch } from "@/hooks/useFetch";
 import { getCards, getSaleCards, getNewInCards, getBestsellerCards, type Card } from "@/lib/api";
 import ProductCard from "./ProductCard";
 import ProductCardSkeleton from "./ProductCardSkeleton";
+import { useT } from "./LocaleProvider";
 
 type SortKey = "featured" | "az" | "za" | "price-asc" | "price-desc";
 
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "featured", label: "Featured" },
-  { key: "az", label: "Alphabetically, A-Z" },
-  { key: "za", label: "Alphabetically, Z-A" },
-  { key: "price-asc", label: "Price, low to high" },
-  { key: "price-desc", label: "Price, high to low" },
+const SORT_OPTIONS: { key: SortKey; tkey: string; label: string }[] = [
+  { key: "featured", tkey: "shop.sort_featured", label: "Featured" },
+  { key: "az", tkey: "shop.sort_az", label: "Alphabetically, A-Z" },
+  { key: "za", tkey: "shop.sort_za", label: "Alphabetically, Z-A" },
+  { key: "price-asc", tkey: "shop.sort_price_asc", label: "Price, low to high" },
+  { key: "price-desc", tkey: "shop.sort_price_desc", label: "Price, high to low" },
 ];
 
 // Layout switch — mirrors the live toolbar (large / medium / compact grids).
@@ -77,16 +78,30 @@ export default function ShopProducts({
   // filter, just fetching a different slice of cards. Same data-driven facets,
   // live counts, and "Clear all" as the main shop — so every listing page filters
   // identically.
-  const { data, loading } = useFetch<Card[]>(() =>
+  const { data, loading } = useFetch<Card[]>(
+    () =>
+      bestseller
+        ? getBestsellerCards()
+        : newIn
+          ? getNewInCards()
+          : saleOnly
+            ? getSaleCards()
+            : getCards(category),
     bestseller
-      ? getBestsellerCards()
+      ? "cards:bestseller"
       : newIn
-        ? getNewInCards()
+        ? "cards:new"
         : saleOnly
-          ? getSaleCards()
-          : getCards(category)
+          ? "cards:sale"
+          : `cards:cat:${category ?? "all"}`
   );
   const router = useRouter();
+  const { t, locale } = useT();
+  // Localized DISPLAY labels for the dynamic facet values (product types, colours,
+  // sizes). The underlying English values still drive filtering/links/cart; only
+  // the shown text is localized (via /api/translate). Base locale → identity.
+  const [valueLabels, setValueLabels] = useState<Record<string, string>>({});
+  const lbl = (v: string) => valueLabels[v] ?? v;
   const [sort, setSort] = useState<SortKey>("featured");
   const [sortOpen, setSortOpen] = useState(false);
   const [layout, setLayout] = useState<Layout>("compact");
@@ -106,6 +121,35 @@ export default function ShopProducts({
   const [filterOpen, setFilterOpen] = useState(false); // drawer mounted in DOM
   const [drawerShown, setDrawerShown] = useState(false); // slid into view
   const topRef = useRef<HTMLDivElement>(null);
+
+  // Localize the unique facet VALUES for display (product types, colours, sizes).
+  // English values still drive filtering; only the shown label changes.
+  useEffect(() => {
+    if (locale === "en" || !data || data.length === 0) { setValueLabels({}); return; }
+    const vals = new Set<string>();
+    for (const c of data) {
+      if (c.productType) vals.add(c.productType);
+      if (c.colour) vals.add(c.colour);
+      for (const s of c.sizes ?? []) vals.add(s);
+    }
+    const uniq = [...vals];
+    if (uniq.length === 0) return;
+    let cancelled = false;
+    fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texts: uniq }),
+    })
+      .then((r) => r.json())
+      .then((d: { translations?: string[] }) => {
+        if (cancelled || !Array.isArray(d.translations)) return;
+        const m: Record<string, string> = {};
+        uniq.forEach((s, i) => { m[s] = d.translations![i] ?? s; });
+        setValueLabels(m);
+      })
+      .catch(() => { /* fall back to English facet labels */ });
+    return () => { cancelled = true; };
+  }, [data, locale]);
 
   // Mount first (off-screen), then flip to the on-screen transform next frame so
   // the panel slides in from the right edge (and slides back out on close).
@@ -294,7 +338,12 @@ export default function ShopProducts({
           {/* Product count */}
           <div className="flex flex-1 items-center justify-center">
             <p className="eyebrow text-espresso/60">
-              {loading ? "…" : `${totalProducts} product${totalProducts === 1 ? "" : "s"}`}
+              {loading
+                ? "…"
+                : (totalProducts === 1
+                    ? t("shop.count_one", "{n} product")
+                    : t("shop.count_other", "{n} products")
+                  ).replace("{n}", String(totalProducts))}
             </p>
           </div>
 
@@ -307,7 +356,7 @@ export default function ShopProducts({
               aria-expanded={sortOpen}
               className="eyebrow text-espresso/70 hover:text-espresso transition-colors flex items-center gap-1.5"
             >
-              Sort by
+              {t("shop.sort_by", "Sort by")}
               <svg width="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
                 <path d="m1 3 4 4 4-4" stroke="currentColor" strokeLinecap="square" />
               </svg>
@@ -333,7 +382,7 @@ export default function ShopProducts({
                         sort === o.key ? "font-medium" : "text-espresso/80"
                       }`}
                     >
-                      {o.label}
+                      {t(o.tkey, o.label)}
                     </button>
                   </li>
                 ))}
@@ -348,7 +397,7 @@ export default function ShopProducts({
               onClick={openFilter}
               className="eyebrow text-espresso/70 hover:text-espresso transition-colors flex items-center gap-1.5"
             >
-              Filter
+              {t("shop.filter", "Filter")}
               {activeCount > 0 && (
                 <span className="text-[10px] bg-espresso text-cream rounded-full px-1.5 py-0.5 leading-none">
                   {activeCount}
@@ -372,26 +421,26 @@ export default function ShopProducts({
           activeCount > 0 ? (
             // Empty because of active filters → reset the filter selections.
             <div className="py-16 text-center">
-              <p className="text-espresso/70">No matching products found.</p>
+              <p className="text-espresso/70">{t("shop.no_matching", "No matching products found.")}</p>
               <button
                 type="button"
                 onClick={resetFilters}
                 className="mt-4 inline-flex items-center rounded-md border border-espresso px-5 py-2 text-sm text-espresso transition-colors hover:bg-espresso hover:text-cream"
               >
-                Clear all filters
+                {t("shop.clear_filters", "Clear all filters")}
               </button>
             </div>
           ) : (
             // Empty category/collection (no products here at all) → "Clear all"
             // takes the shopper back to the previous page where results showed.
             <div className="py-16 text-center">
-              <p className="text-espresso/70">No products found.</p>
+              <p className="text-espresso/70">{t("shop.no_products", "No products found.")}</p>
               <button
                 type="button"
                 onClick={() => router.back()}
                 className="mt-4 inline-flex items-center rounded-md border border-espresso px-5 py-2 text-sm text-espresso transition-colors hover:bg-espresso hover:text-cream"
               >
-                Clear all
+                {t("shop.clear_all", "Clear all")}
               </button>
             </div>
           )
@@ -490,7 +539,7 @@ export default function ShopProducts({
             }`}
           >
             <div className="flex items-center justify-between px-8 py-[1.125rem] border-b border-line">
-              <span className="text-sm uppercase tracking-[0.2em] text-espresso">Filters</span>
+              <span className="text-sm uppercase tracking-[0.2em] text-espresso">{t("shop.filters", "Filters")}</span>
               <button type="button" onClick={closeFilter} aria-label="Close filters" className="text-espresso/60 hover:text-espresso">
                 <svg width="16" viewBox="0 0 16 16" fill="none"><path d="m1 1 14 14M1 15 15 1" stroke="currentColor" strokeWidth="1.5" /></svg>
               </button>
@@ -500,11 +549,12 @@ export default function ShopProducts({
               {FILTER_KEYS.map((key) => (
                 <FacetGroup
                   key={key}
-                  title={FILTER_LABELS[key]}
+                  title={t(`shop.facet_${key}`, FILTER_LABELS[key])}
                   options={facets[key]}
                   selected={draft[key]}
                   onToggle={(v) => toggleDraft(key, v)}
                   swatches={key === "colour" ? colourHex : undefined}
+                  labelFor={lbl}
                 />
               ))}
             </div>
@@ -512,11 +562,11 @@ export default function ShopProducts({
             <div className="border-t border-line px-8 py-6">
               {draftCount > 0 && (
                 <button type="button" onClick={clearDraft} className="block w-full text-center text-sm text-espresso/60 hover:text-espresso underline underline-offset-2 mb-4">
-                  Clear all
+                  {t("shop.clear_all", "Clear all")}
                 </button>
               )}
               <button type="button" onClick={applyDraft} className="btn-lh w-full">
-                View results
+                {t("shop.view_results", "View results")}
               </button>
             </div>
           </div>
@@ -546,12 +596,14 @@ function FacetGroup({
   selected,
   onToggle,
   swatches,
+  labelFor = (v) => v,
 }: {
   title: string;
   options: [string, number][];
   selected: string[];
   onToggle: (value: string) => void;
   swatches?: Map<string, string>;
+  labelFor?: (value: string) => string; // localized display label for a value
 }) {
   const [open, setOpen] = useState(false);
   if (options.length === 0) return null;
@@ -590,7 +642,7 @@ function FacetGroup({
                     type="button"
                     onClick={() => onToggle(value)}
                     aria-pressed={sel}
-                    title={`${value} (${count})`}
+                    title={`${labelFor(value)} (${count})`}
                     className={`color-swatch${sel ? " is-selected" : ""}${
                       isLightHex(hex) ? " is-bordered" : ""
                     }`}
@@ -600,7 +652,7 @@ function FacetGroup({
                       } as React.CSSProperties
                     }
                   >
-                    <span className="sr-only">{value}</span>
+                    <span className="sr-only">{labelFor(value)}</span>
                   </button>
                 </li>
               );
@@ -619,7 +671,7 @@ function FacetGroup({
                     onChange={() => onToggle(value)}
                   />
                   <span>
-                    {value} ({count})
+                    {labelFor(value)} ({count})
                   </span>
                 </label>
               </li>

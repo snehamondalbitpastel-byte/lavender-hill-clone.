@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useFetch } from "@/hooks/useFetch";
 import { getProduct, type ProductFull } from "@/lib/api";
@@ -8,6 +8,10 @@ import { useCart, parseRs } from "./CartProvider";
 import { useCurrency } from "./CurrencyProvider";
 import { badgeClass } from "@/lib/badge";
 import { maxQtyFor, MAX_PER_ORDER, variantStockOf, colourSoldOutOf } from "@/lib/inventory";
+import ProductReviews from "./ProductReviews";
+import SizeGuideModal from "./SizeGuideModal";
+import ProductDetailSkeleton from "./ProductDetailSkeleton";
+import { useT } from "./LocaleProvider";
 
 // ============================================================
 // PHASE 1 — STATIC product detail (Ribbed Lounge Jumper).
@@ -22,20 +26,12 @@ import { maxQtyFor, MAX_PER_ORDER, variantStockOf, colourSoldOutOf } from "@/lib
 // Everything on this page is DYNAMIC per product: gallery, colours, sizes,
 // title, price, rating, About, Material Matters, accordions, Key Features,
 // Why You'll Love It, Styling Tips, Behind The Seams and You Might Also Like
-// all come from /api/products/[id] (admin-editable). Reviews are still the
-// static sample below (wired to /api/reviews in the next stage).
+// all come from /api/products/[id] (admin-editable). Customer reviews render in
+// the <ProductReviews> component below (static sample data for now).
 
-// Sample reviews (static demo of the Yotpo widget). Next stage wires this to the
-// /api/reviews endpoint. Shape mirrors the Yotpo review card.
-const REVIEW_AVG = 4.4;
-const REVIEW_COUNT = 48;
-const SAMPLE_REVIEWS = [
-  { name: "Kathleen", rating: 3, title: "", body: "Not as loose nor as swinging as I had hoped but okay.", date: "02/06/26", up: 1, down: 0 },
-  { name: "Eliza R.", rating: 2, title: "Too small", body: "This item came up very small. I liked so requested an exchange on 6 February. I'm still waiting and not happy at the delay.", date: "19/02/26", up: 12, down: 7 },
-  { name: "Pamela P.", rating: 5, title: "Beautiful quality", body: "I'm delighted with my purchase — a very pretty shade and light enough in weight to complement a skirt.", date: "02/10/25", up: 3, down: 0 },
-  { name: "Sarah W.", rating: 5, title: "Surprise present", body: "I bought two of these in different colours as a surprise present. She loves the comfort of the fit and the texture.", date: "18/08/25", up: 5, down: 0 },
-  { name: "Helen M.", rating: 4, title: "", body: "Lovely quality but my size was a little too fitted in the waist so returned for the next size up.", date: "14/08/25", up: 2, down: 1 },
-];
+// Low-stock progress bar max — mirrors the live theme's inventory bar
+// (aria-valuemax="50"); the fill = remaining / STOCK_BAR_MAX.
+const STOCK_BAR_MAX = 50;
 
 // One star (full / half / empty) — same glyph as ProductCard.
 function Star({ variant, size = 12 }: { variant: "full" | "half" | "empty"; size?: number }) {
@@ -61,45 +57,6 @@ function Stars({ rating, size = 12 }: { rating: number; size?: number }) {
         <Star key={i} variant={i < full ? "full" : i === full && half ? "half" : "empty"} size={size} />
       ))}
     </span>
-  );
-}
-
-// Yotpo-style reviewer avatar (abstract person + verified check badge).
-function ReviewerAvatar() {
-  return (
-    <div className="relative h-10 w-10 shrink-0">
-      <svg viewBox="0 0 600 600" className="h-10 w-10" aria-hidden="true">
-        <defs>
-          <clipPath id="rv-clip">
-            <circle cx="300" cy="300" r="250" />
-          </clipPath>
-        </defs>
-        <circle cx="300" cy="300" r="280" fill="#CCD2E1" />
-        <circle cx="300" cy="230" r="100" fill="#8D99B6" />
-        <circle cx="300" cy="550" r="190" fill="#8D99B6" clipPath="url(#rv-clip)" />
-      </svg>
-      <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-espresso">
-        <svg width="9" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-          <path d="M4 7.22222L6.72269 10L11.5 5.5" stroke="white" strokeWidth="1.8" />
-        </svg>
-      </span>
-    </div>
-  );
-}
-
-// Thumb up/down icon (down = flipped).
-function Thumb({ down = false }: { down?: boolean }) {
-  return (
-    <svg
-      width="14"
-      height="13"
-      viewBox="0 0 14 13"
-      fill="currentColor"
-      aria-hidden="true"
-      className={down ? "rotate-180" : ""}
-    >
-      <path d="M8.65 4.68h4.08c.34 0 .66.13.9.37.24.24.37.56.37.9v1.34c0 .16-.03.33-.1.48l-1.97 4.78c-.05.12-.13.22-.23.29-.11.07-.23.11-.36.11H.64a.64.64 0 0 1-.64-.64V5.96c0-.35.28-.64.64-.64h2.21c.1 0 .2-.03.29-.07.09-.05.17-.11.23-.2L6.84.13a.32.32 0 0 1 .4-.1l1.16.58c.32.16.58.43.73.76.15.33.19.7.1 1.05L8.65 4.68ZM3.82 6.33v5.35h7.1l1.81-4.39V5.96H8.65c-.2 0-.38-.05-.56-.13a1.3 1.3 0 0 1-.68-.86 1.3 1.3 0 0 1 .01-.57l.58-2.26a.32.32 0 0 0-.17-.37l-.42-.21-3 4.25c-.15.22-.36.41-.59.54ZM2.55 6.59H1.27v5.09h1.28V6.59Z" />
-    </svg>
   );
 }
 
@@ -222,10 +179,11 @@ function ImageWithText({
 }
 
 export default function ProductDetail({ id }: { id: string }) {
-  const { data: product, loading, error } = useFetch<ProductFull>(() => getProduct(id));
+  const { data: product, loading, error } = useFetch<ProductFull>(() => getProduct(id), `product:${id}`);
 
   const [colour, setColour] = useState("");
   const [size, setSize] = useState("");
+  const [showSizeGuide, setShowSizeGuide] = useState(false); // Size Guide modal
   const [qty, setQty] = useState(1);
   // Remembers the quantity chosen per VARIANT (colour|size), so switching colour
   // or size restores that variant's last count (fresh variant starts at 1).
@@ -255,6 +213,7 @@ export default function ProductDetail({ id }: { id: string }) {
 
   const cart = useCart();
   const { localize } = useCurrency();
+  const { t } = useT();
 
   async function addToCart() {
     if (!product || checking) return;
@@ -326,8 +285,81 @@ export default function ProductDetail({ id }: { id: string }) {
     }
   }, [cart.items.length]);
 
+  // Sticky add-to-cart bar: reveals a compact bar below the header once the
+  // shopper scrolls into the product body (~half a screen down, around the middle
+  // of the description) — mirrors the live product-sticky-bar. We use scroll
+  // position (not the CTA button) because the info column is sticky, so the CTA
+  // stays on-screen and would trigger far too late.
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShowStickyBar(window.scrollY > window.innerHeight * 0.5);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // ---- Full-screen image viewer (lightbox) ---------------------------------
+  // Hover the main image → zoom cursor; click → this full-screen viewer opens
+  // (works for EVERY product). Browser Back / Esc / ✕ close it; ← → navigate.
+  // `lightbox` = index into the gallery being viewed (null = closed).
+  const [lightbox, setLightbox] = useState<number | null>(null);
+  // The gallery is computed AFTER the early returns below, so the keyboard
+  // handler (declared here, before them) reads the current gallery via this ref.
+  const galleryRef = useRef<{ url: string; colour: string }[]>([]);
+
+  const openLightbox = useCallback((i: number) => {
+    setLightbox(i);
+    // Push one history entry so the browser Back button closes the viewer — the
+    // "route-like" behaviour of the live site (the URL stays the product URL).
+    try {
+      window.history.pushState({ lhLightbox: true }, "");
+    } catch {
+      /* history unavailable — viewer still closes via ✕/Esc */
+    }
+  }, []);
+  const closeLightbox = useCallback(() => {
+    // If our pushed entry is on top, go back (fires popstate → closes); else close.
+    if (
+      typeof window !== "undefined" &&
+      (window.history.state as { lhLightbox?: boolean } | null)?.lhLightbox
+    ) {
+      window.history.back();
+    } else {
+      setLightbox(null);
+    }
+  }, []);
+  const stepLightbox = useCallback((dir: 1 | -1) => {
+    setLightbox((i) => {
+      const len = galleryRef.current.length;
+      if (i === null || len === 0) return i;
+      return (i + dir + len) % len;
+    });
+  }, []);
+
+  // Browser Back (or any back navigation) closes the viewer.
+  useEffect(() => {
+    const onPop = () => setLightbox(null);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  // While open: lock body scroll + keyboard controls (Esc = close, ← → = navigate).
+  useEffect(() => {
+    if (lightbox === null) return;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+      else if (e.key === "ArrowRight") stepLightbox(1);
+      else if (e.key === "ArrowLeft") stepLightbox(-1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [lightbox, closeLightbox, stepLightbox]);
+
   if (loading) {
-    return <div className="py-40 text-center text-sm text-espresso/50">Loading…</div>;
+    return <ProductDetailSkeleton />;
   }
   if (error || !product) {
     return (
@@ -356,6 +388,8 @@ export default function ProductDetail({ id }: { id: string }) {
   const selSize = size || product.sizes[0] || "";
   const main = gallery[active] ?? gallery[0];
   const c = product.content; // rich admin-editable sections
+  // Keep the lightbox's keyboard handler pointed at the current gallery.
+  galleryRef.current = gallery;
 
   // Inventory is per (colour, SIZE). Reads the SELECTED variant's stock (null =
   // untracked / unlimited), so switching colour OR size updates availability.
@@ -421,6 +455,49 @@ export default function ProductDetail({ id }: { id: string }) {
 
   return (
     <div>
+      {/* ===== Sticky add-to-cart bar — slides in below the header once the main
+           Add-to-cart button scrolls out of view (live "safe-sticky" behaviour) ===== */}
+      <div
+        aria-hidden={!showStickyBar}
+        className={`fixed inset-x-0 top-16 z-30 border-b border-white/10 bg-espresso transition-opacity duration-200 md:top-[74px] ${
+          showStickyBar ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      >
+        <div className="w-full px-4 md:px-12 lg:px-[53px]">
+          <div className="flex items-center gap-4 py-4 md:gap-6 md:py-4.5">
+            {/* thumbnail (current variant image) */}
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden bg-espresso/40 md:h-14 md:w-14">
+              {main && <Image src={main.url} alt="" fill sizes="48px" className="object-cover" />}
+            </div>
+            {/* title + price (light text on the dark chocolate bar) */}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs uppercase tracking-[0.1em] text-cream [font-family:var(--font-heading)] md:text-sm">
+                {product.title}
+              </p>
+              <p className="mt-0.5 text-xs uppercase tracking-[0.05em] text-cream/70 [font-family:var(--font-heading)]">
+                {product.compareAtPrice && product.saveBadge ? (
+                  <>
+                    <s className="mr-1.5 text-cream/40">{localize(product.compareAtPrice)}</s>
+                    <span className="text-cream">{localize(product.price)}</span>
+                  </>
+                ) : (
+                  localize(product.price)
+                )}
+              </p>
+            </div>
+            {/* Add to cart — off-white button (btn-lh--light) on the dark bar */}
+            <button
+              type="button"
+              onClick={addToCart}
+              disabled={outOfStock}
+              className="btn-lh btn-lh--light shrink-0 px-5 py-3 text-[0.7rem] disabled:cursor-not-allowed disabled:opacity-50 md:px-8"
+            >
+              {outOfStock ? t("product.out_of_stock", "Out of stock") : t("product.add_to_cart", "Add to cart")}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* ===== Product grid: gallery (0.65fr) + info (0.35fr) ===== */}
       <section className="w-full px-6 md:px-12 lg:px-14 pt-6 md:pt-10 pb-14 md:pb-20">
         <div className="lg:grid lg:grid-cols-[minmax(0,0.65fr)_minmax(0,0.35fr)] lg:gap-x-14 xl:gap-x-20 lg:items-start">
@@ -432,7 +509,8 @@ export default function ProductDetail({ id }: { id: string }) {
                 {gallery.map((g, i) => (
                   <div
                     key={`${g.url}-${i}`}
-                    className="relative aspect-[2/3] w-[82%] shrink-0 snap-center overflow-hidden bg-beige"
+                    onClick={() => openLightbox(i)}
+                    className="relative aspect-[2/3] w-[82%] shrink-0 snap-center overflow-hidden bg-beige cursor-zoom-in"
                   >
                     <Image src={g.url} alt="" fill sizes="82vw" className="object-cover" />
                   </div>
@@ -459,7 +537,19 @@ export default function ProductDetail({ id }: { id: string }) {
                 ))}
               </div>
 
-              <div className="relative flex-1 aspect-[2/3] overflow-hidden bg-beige">
+              <div
+                onClick={() => openLightbox(active)}
+                role="button"
+                tabIndex={0}
+                aria-label="Open image in full screen"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openLightbox(active);
+                  }
+                }}
+                className="relative flex-1 aspect-[2/3] overflow-hidden bg-beige cursor-zoom-in"
+              >
                 {main && (
                   <Image
                     key={main.url}
@@ -511,7 +601,7 @@ export default function ProductDetail({ id }: { id: string }) {
             {product.colours.length > 0 && (
               <div className="mt-8">
                 <p className="text-sm mb-3">
-                  <span className="text-espresso/60">Colour:</span> <span>{selColour}</span>
+                  <span className="text-espresso/60">{t("product.colour_label", "Colour:")}</span> <span>{selColour}</span>
                 </p>
                 <div className="flex flex-wrap gap-2.5">
                   {product.colours.map((c) => {
@@ -554,7 +644,19 @@ export default function ProductDetail({ id }: { id: string }) {
             {/* Size */}
             {product.sizes.length > 0 && (
               <div className="mt-6">
-                <p className="text-sm mb-3 text-espresso/60">Size:</p>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm text-espresso/60">{t("product.size_label", "Size:")}</p>
+                  {/* UK-sized products get a link to the shared Size Guide modal. */}
+                  {product.sizeChart && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSizeGuide(true)}
+                      className="text-sm text-espresso underline decoration-line underline-offset-4 transition-colors hover:text-taupe"
+                    >
+                      {t("product.size_chart", "Size chart")}
+                    </button>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-2.5">
                   {product.sizes.map((s) => {
                     // Sold out for the SELECTED colour at this size → slash the box so
@@ -622,12 +724,41 @@ export default function ProductDetail({ id }: { id: string }) {
             {outOfStock ? (
               <p className="mt-2 text-sm font-medium text-[#b23a3a]">Out of stock in {variantLabel}</p>
             ) : lowStock ? (
-              <p className="mt-2 text-sm text-[#b23a3a]">Only {stock} left in {variantLabel}</p>
+              // Low-stock "inventory" block — mirrors the live theme's
+              // <variant-inventory class="inventory text-success">: italic green
+              // "N in stock" over a progress bar whose fill = remaining / 50
+              // (--success-text 48 122 7 = #307a07, --success-background 212 227 203 = #d4e3cb).
+              <div className="mt-2 grid gap-2">
+                <span className="text-sm italic text-[#307a07]">{stock} in stock</span>
+                <span
+                  role="progressbar"
+                  aria-valuenow={stock ?? 0}
+                  aria-valuemin={0}
+                  aria-valuemax={STOCK_BAR_MAX}
+                  className="block h-1 w-full overflow-hidden bg-[#d4e3cb]"
+                >
+                  <span
+                    className="block h-full bg-[#307a07] transition-[width] duration-500"
+                    style={{ width: `${Math.min(100, Math.max(3, ((stock ?? 0) / STOCK_BAR_MAX) * 100))}%` }}
+                  />
+                </span>
+              </div>
             ) : atMax ? (
               <p className="mt-2 text-sm text-espresso/55">Up to {MAX_PER_ORDER} per order.</p>
             ) : null}
 
-            {/* Back-in-stock — shown ABOVE the disabled Out-of-stock button so a
+            {/* Add to cart — the (disabled) Out-of-stock button shows FIRST. */}
+            <button
+              type="button"
+              onClick={addToCart}
+              disabled={outOfStock}
+              className="btn-lh btn-lh--plum mt-6 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {outOfStock ? t("product.out_of_stock", "Out of stock") : t("product.add_to_cart", "Add to cart")}
+            </button>
+            {warn && <p className="mt-2 text-sm text-[#b23a3a]">{warn}</p>}
+
+            {/* Back-in-stock — shown BELOW the disabled Out-of-stock button so a
                 shopper can ask to be emailed when this variant returns. */}
             {outOfStock && (
               <div className="mt-6">
@@ -651,7 +782,7 @@ export default function ProductDetail({ id }: { id: string }) {
                         disabled={notifyBusy}
                         className="btn-lh btn-lh--taupe shrink-0 justify-center px-5 disabled:opacity-60"
                       >
-                        {notifyBusy ? "…" : "Notify me"}
+                        {notifyBusy ? "…" : t("product.notify_me", "Notify me")}
                       </button>
                     </div>
                     {notifyErr && <p className="text-sm text-[#b23a3a]">{notifyErr}</p>}
@@ -662,22 +793,11 @@ export default function ProductDetail({ id }: { id: string }) {
                     onClick={() => setNotifyOpen(true)}
                     className="btn-lh btn-lh--taupe w-full justify-center"
                   >
-                    Notify me when available
+                    {t("product.notify_available", "Notify me when available")}
                   </button>
                 )}
               </div>
             )}
-
-            {/* Add to cart */}
-            <button
-              type="button"
-              onClick={addToCart}
-              disabled={outOfStock}
-              className="btn-lh btn-lh--taupe mt-6 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {outOfStock ? "Out of stock" : "Add to cart"}
-            </button>
-            {warn && <p className="mt-2 text-sm text-[#b23a3a]">{warn}</p>}
 
             {/* Login required to add to cart (guest) */}
             {loginGate && (
@@ -824,7 +944,7 @@ export default function ProductDetail({ id }: { id: string }) {
                         href={`/products/${p.slug}`}
                         className="btn-lh shrink-0 px-4 py-2.5 text-[0.7rem]"
                       >
-                        Add to cart
+                        {t("product.add_to_cart", "Add to cart")}
                       </a>
                     </div>
                   );
@@ -934,120 +1054,85 @@ export default function ProductDetail({ id }: { id: string }) {
         </section>
       )}
 
-      {/* ===== Customer Reviews — Yotpo-style widget =====
-          TEMP: hidden for now — these are static sample reviews and the
-          /api/reviews endpoint isn't built yet. Flip `false` to `true`
-          (or wire the reviews API) to show it again. */}
-      {false && (
-      <section className="w-full border-t border-line py-16 md:py-20">
-        <div className="mx-auto max-w-[71.875rem] px-6">
-          {/* headline */}
-          <p className="mb-8 text-center text-xl md:text-2xl">Customer Reviews</p>
+      {/* ===== Customer Reviews — interactive widget (STATIC sample data) =====
+          Extracted to <ProductReviews>: rating/sort filters, With-media toggle,
+          Clear filters, helpful votes, and the Write-A-Review modal. Still static
+          sample data — the real per-product /api/reviews endpoint is next. */}
+      <ProductReviews productId={product.id} />
 
-          {/* bottom-line summary + Write A Review */}
-          <div className="flex flex-col items-center gap-6 border-b border-line pb-8 sm:flex-row sm:justify-between">
-            <div className="flex items-center gap-4">
-              <span className="text-4xl leading-none text-espresso">{REVIEW_AVG}</span>
-              <div>
-                <Stars rating={REVIEW_AVG} size={18} />
-                <p className="mt-1 text-sm text-espresso/70">Based on {REVIEW_COUNT} reviews</p>
-              </div>
+      {/* Shared Size Guide modal — opened by the "Size chart" link (UK-sized products). */}
+      {showSizeGuide && <SizeGuideModal onClose={() => setShowSizeGuide(false)} />}
+
+      {/* ===== Full-screen image viewer (lightbox) =====
+          Opens when the main/gallery image is clicked (cursor-zoom-in). Dark
+          chocolate backdrop + the image contained; circular prev / close / next
+          controls at the bottom centre (mirrors the live PhotoSwipe viewer).
+          Browser Back / Esc / ✕ close it; ← → (or the arrows) navigate. */}
+      {lightbox !== null && gallery[lightbox] && (
+        <div
+          className="fixed inset-0 z-[100] flex flex-col bg-espresso"
+          role="dialog"
+          aria-modal="true"
+          aria-label={product.title}
+        >
+          {/* Image counter (top centre) */}
+          {gallery.length > 1 && (
+            <div className="absolute left-1/2 top-5 -translate-x-1/2 text-xs uppercase tracking-[0.1em] text-cream/70">
+              {lightbox + 1} / {gallery.length}
             </div>
-            <button type="button" className="btn-lh">Write A Review</button>
+          )}
+
+          {/* Image */}
+          <div className="relative flex-1">
+            <Image
+              key={gallery[lightbox].url}
+              src={gallery[lightbox].url}
+              alt={product.title}
+              fill
+              sizes="100vw"
+              priority
+              className="object-contain"
+            />
           </div>
 
-          {/* filter bar: Rating · With media · Sort by */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line py-4">
-            <div className="flex flex-wrap items-center gap-4">
+          {/* Controls — circular buttons, bottom centre */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-6 flex items-center justify-center gap-4 md:bottom-8">
+            {gallery.length > 1 && (
               <button
                 type="button"
-                className="flex items-center gap-8 border border-[#e0ddd8] px-3 py-2 text-sm text-espresso/80"
+                onClick={() => stepLightbox(-1)}
+                aria-label="Previous image"
+                className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-cream/90 text-espresso shadow-soft transition hover:bg-cream"
               >
-                <span className="flex flex-col text-left leading-tight">
-                  <span className="text-[0.65rem] text-espresso/50">Rating</span>
-                  <span>All ratings</span>
-                </span>
-                <svg width="10" height="7" viewBox="0 0 10 7" fill="none" aria-hidden="true">
-                  <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
-              <button type="button" className="flex items-center gap-2 text-sm text-espresso/80">
-                <span className="h-4 w-4 rounded-full border border-espresso" />
-                With media
-              </button>
-            </div>
-            <button type="button" className="flex items-center gap-2 text-sm text-espresso/80">
-              Sort by: <span className="text-espresso">Most recent</span>
-              <svg width="10" height="7" viewBox="0 0 10 7" fill="none" aria-hidden="true">
-                <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" />
+            )}
+            <button
+              type="button"
+              onClick={closeLightbox}
+              aria-label="Close"
+              className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-cream/90 text-espresso shadow-soft transition hover:bg-cream"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </button>
-          </div>
-
-          {/* review list */}
-          <ul>
-            {SAMPLE_REVIEWS.map((r, i) => (
-              <li key={i} className="border-b border-line py-8">
-                <div className="grid gap-5 md:grid-cols-[190px_1fr_170px]">
-                  {/* reviewer */}
-                  <div className="flex items-start gap-3">
-                    <ReviewerAvatar />
-                    <div className="min-w-0">
-                      <p className="text-sm text-espresso">{r.name}</p>
-                      <p className="mt-0.5 text-xs text-espresso/55">Verified Buyer</p>
-                    </div>
-                  </div>
-                  {/* stars + title + body */}
-                  <div>
-                    <Stars rating={r.rating} size={16} />
-                    {r.title && (
-                      <p className="mt-2 text-sm font-semibold text-espresso">{r.title}</p>
-                    )}
-                    <p className="mt-2 text-sm leading-[1.7] text-espresso/80">{r.body}</p>
-                  </div>
-                  {/* date */}
-                  <div className="md:text-right">
-                    <p className="text-[0.7rem] uppercase tracking-[0.08em] text-espresso/40">
-                      Published date
-                    </p>
-                    <p className="mt-0.5 text-sm text-espresso/70">{r.date}</p>
-                  </div>
-                </div>
-                {/* helpful votes */}
-                <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-espresso/70 md:pl-[190px]">
-                  <span>Was this review helpful?</span>
-                  <span className="flex items-center gap-1.5">
-                    <Thumb />
-                    <span className="text-xs tabular-nums">{r.up}</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Thumb down />
-                    <span className="text-xs tabular-nums">{r.down}</span>
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          {/* pagination */}
-          <nav aria-label="Reviews pagination" className="mt-10 flex justify-center gap-4 text-sm">
-            {[1, 2, 3, 4, 5].map((n) => (
+            {gallery.length > 1 && (
               <button
-                key={n}
                 type="button"
-                aria-current={n === 1 ? "page" : undefined}
-                className={
-                  n === 1
-                    ? "text-espresso underline underline-offset-4"
-                    : "text-espresso/60 transition-colors hover:text-espresso"
-                }
+                onClick={() => stepLightbox(1)}
+                aria-label="Next image"
+                className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-cream/90 text-espresso shadow-soft transition hover:bg-cream"
               >
-                {n}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
-            ))}
-          </nav>
+            )}
+          </div>
         </div>
-      </section>
       )}
     </div>
   );

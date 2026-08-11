@@ -14,14 +14,15 @@ export async function GET() {
 export async function POST(request: Request) {
   if (!(await getAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const b = await request.json().catch(() => ({}));
-  if (!s(b.look) || !s(b.name)) {
-    return Response.json({ error: "Look image and product name are required." }, { status: 400 });
+  if (!s(b.look) || (!s(b.productSlug) && !s(b.name))) {
+    return Response.json({ error: "Look image and either a linked product or a name are required." }, { status: 400 });
   }
   const created = await prisma.look.create({
     data: {
       look: s(b.look),
       hotspotTop: s(b.hotspotTop) || "50%",
       hotspotLeft: s(b.hotspotLeft) || "50%",
+      productSlug: s(b.productSlug),
       name: s(b.name),
       price: s(b.price),
       productImg: s(b.productImg),

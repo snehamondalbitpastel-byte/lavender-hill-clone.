@@ -146,6 +146,13 @@
     --btn-text: #fff;
   }
 
+  /* Plum variant — matches the live product page's Add-to-cart button
+     (--button-background: 83 58 89; --button-text-color: 239 239 239) */
+  .btn-lh--plum {
+    --btn-bg: var(--color-plum); /* #533a59 = rgb(83 58 89) */
+    --btn-text: #efefef; /* rgb(239 239 239) */
+  }
+
   /* Outline variant — the same fill-wipe, reversed: transparent at rest with a
      white outline, filling with white on hover (matches `.button--outline` on
      the dark hero slides). Overrides the base size/position/colours. */
@@ -367,6 +374,16 @@
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Simple fade-in used by page-builder blocks (e.g. the timeline content swap). */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Footer scrolling marquee band — continuous left scroll. The track holds two

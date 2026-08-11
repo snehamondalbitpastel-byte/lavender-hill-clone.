@@ -31,6 +31,7 @@ model Customer {
   createdAt        DateTime  @default(now())
   addresses        Address[]
   orders           Order[]
+  reviews          Review[]
 }
 
 // Saved shipping/billing addresses for a customer (managed on /profile).
@@ -235,7 +236,19 @@ model Product {
   order       Int      @default(0) // position in the shop grid
   bestseller  Boolean  @default(false) // Home bestsellers
   isNew       Boolean  @default(false) // New In page
+  // When true, this product sizes in UK numbers (UK 8…UK 16) instead of letters
+  // (XS…XXL), and its detail page shows a "Size chart" link opening the shared
+  // Size Guide modal (constant data, see lib/size-guide.ts). Purely a size-SYSTEM
+  // flag: `sizes`/`colourData.sizeStock` still store whatever labels are chosen.
+  sizeChart   Boolean  @default(false)
+  // When true, the product is EXCLUDED from every browsing listing (shop grid,
+  // category/collection pages, search, "You might also like") — it gets no shop
+  // cards. It still exists as a real product: its /products/<slug> page works and
+  // it can power curated sections like "As Styled By You". Used for look-only
+  // products that shouldn't clutter the catalogue.
+  hiddenFromShop Boolean @default(false)
   createdAt   DateTime @default(now())
+  reviewList  Review[] // relation back-reference (the `reviews` Int above is the cached count)
 }
 
 // Shop grid cards — the live "Variable Products" app shows ONE CARD PER COLOUR,
@@ -269,6 +282,7 @@ model Category {
   label             String // short name shown in menus / tags / sub-tabs
   heading           String     @default("") // banner title (falls back to label / parent)
   description       String     @default("") // top banner description
+  bottomHeading     String     @default("") // optional heading above the closing note
   bottomDescription String     @default("") // optional closing note under the product grid
   // How this collection's product grid is filled:
   //   category   → products tagged with this handle (default; the taxonomy)
@@ -278,7 +292,12 @@ model Category {
   //   bestseller → products flagged Bestseller    (the "Bestsellers" collection)
   source      String     @default("category")
   order       Int        @default(0)
-  page        String     @default("shop") // legacy: listing page for filter tags: shop | new-in | sale
+  bannerImage String     @default("") // optional banner image at the top of this collection's page
+  // Handles of OTHER collections to show as clickable "options" on this page
+  // (e.g. New In shows [t-shirts, nightwear, …]). Flat + many-to-many — NOT a
+  // parent/child tree. Each links to its own /collections/<handle> page.
+  relatedHandles String[] @default([])
+  page        String     @default("shop") // legacy (unused in UI)
   parentId    Int?
   parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
   children    Category[] @relation("CategoryTree")
@@ -294,6 +313,22 @@ model Collection {
 }
 
 // Behind The Brand (a single content block + its tiles as a JSON string)
+// Dynamic content pages (e.g. "Press / As Seen on", and later "Our Story"). Each
+// renders at /pages/<slug> from admin data. `items` is a JSON array of image
+// cards: [{ image, link, alt }] — the press/quote images (link is optional).
+model Page {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  title     String   @default("")
+  intro     String   @default("") // prose under the heading (multi-line)
+  items     String   @default("[]") // JSON: [{ image, link, alt }]  (legacy simple template)
+  sections  String   @default("[]") // JSON: [{ id, type, data }]  (section-based page builder)
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model BrandContent {
   id          Int    @id @default(autoincrement())
   title       String
@@ -310,6 +345,10 @@ model Look {
   look          String
   hotspotTop    String
   hotspotLeft   String
+  // The product this look features. When set, the storefront DERIVES the card's
+  // name / price / images / colours / link from that product (so they always
+  // match the "View product" destination). The fields below are the fallback.
+  productSlug   String @default("")
   name          String
   price         String
   productImg    String
@@ -321,11 +360,14 @@ model Look {
 
 // Shop mega-menu — one column (heading link) with its sub-links.
 model MenuGroup {
-  id    Int        @id @default(autoincrement())
-  title String
-  href  String
-  order Int        @default(0)
-  links MenuLink[]
+  id       Int        @id @default(autoincrement())
+  title    String
+  href     String     @default("")
+  location String     @default("shop") // which nav item this column belongs to: "shop" | "about"
+  image    String     @default("") // optional featured image for this column (renders as an image tile)
+  caption  String     @default("") // optional caption under the image
+  order    Int        @default(0)
+  links    MenuLink[]
 }
 
 model MenuLink {
@@ -387,4 +429,48 @@ model Translation {
 
   @@unique([locale, sourceKey])
   @@index([locale])
+}
+
+// Customer product reviews. One row per review, written by a LOGGED-IN customer
+// on a product. The product's denormalized `rating`/`reviews` (and the derived
+// shop `Card` rows) are recomputed from the PUBLISHED rows here whenever a review
+// is created / deleted / hidden — same single-source + cache pattern as the cards.
+model Review {
+  id          Int      @id @default(autoincrement())
+  productId   Int
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customerId  Int
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  authorName  String // display-name snapshot at write time (e.g. "Christina V.")
+  rating      Int // 1–5
+  title       String   @default("")
+  body        String
+  media       String   @default("[]") // JSON array of uploaded image/video URLs (deferred)
+  verified    Boolean  @default(false) // verified purchase — feature deferred; set later
+  status      String   @default("published") // published | hidden (admin moderation)
+  helpfulUp   Int      @default(0) // denormalized tallies (source of truth = ReviewVote)
+  helpfulDown Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  votes       ReviewVote[]
+
+  // One review per customer per product (editable). Remove to allow many.
+  @@unique([productId, customerId])
+  @@index([productId, status, createdAt])
+  @@index([customerId])
+}
+
+// One helpful / not-helpful vote per customer per review — prevents double-voting
+// and lets a shopper toggle or switch their vote. Review.helpfulUp/Down are the
+// cached tallies of these rows.
+model ReviewVote {
+  id         Int      @id @default(autoincrement())
+  reviewId   Int
+  review     Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  customerId Int // who voted
+  value      Int // 1 = helpful, -1 = not helpful
+  createdAt  DateTime @default(now())
+
+  @@unique([reviewId, customerId])
+  @@index([reviewId])
 }

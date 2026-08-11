@@ -19,8 +19,9 @@ export default async function AdminCategoriesPage() {
         <h1 className="text-2xl mt-1 tracking-[0.04em]">Collections</h1>
         <p className="text-sm text-espresso/55 mt-1">
           The collections shoppers browse — each one is a <code className="text-espresso/70">/collections/&lt;name&gt;</code> page.
-          Add a collection, then <b>Edit</b> it to set its heading, descriptions, sub-categories and
-          which products it contains. New collections appear automatically on every product's edit page.
+          Add a collection, then <b>Edit</b> it to set its heading, descriptions, banner image, which
+          other collections show as options on it, and which products it contains. New collections appear
+          automatically on every product's edit page.
         </p>
       </header>
       <CategoriesManager categories={categories} products={products} />

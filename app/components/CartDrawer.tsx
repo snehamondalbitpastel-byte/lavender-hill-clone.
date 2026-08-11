@@ -12,8 +12,33 @@ type Offer = { code: string; off: string; min: number };
 export default function CartDrawer() {
   const { items, isOpen, closeCart, subtotal, setQty, remove, note, setNote } = useCart();
   const { money } = useCurrency();
-  const { t } = useT();
+  const { t, locale } = useT();
   const [noteOpen, setNoteOpen] = useState(false);
+
+  // Cart item titles are stored in English (captured at add-time). Localize them
+  // for display in the caller's language via /api/translate (base locale = no-op).
+  const [titleMap, setTitleMap] = useState<Record<string, string>>({});
+  const titlesKey = items.map((i) => i.title).join("|");
+  useEffect(() => {
+    if (locale === "en" || items.length === 0) { setTitleMap({}); return; }
+    const uniq = Array.from(new Set(items.map((i) => i.title)));
+    let cancelled = false;
+    fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texts: uniq }),
+    })
+      .then((r) => r.json())
+      .then((d: { translations?: string[] }) => {
+        if (cancelled || !Array.isArray(d.translations)) return;
+        const m: Record<string, string> = {};
+        uniq.forEach((s, i) => { m[s] = d.translations![i] ?? s; });
+        setTitleMap(m);
+      })
+      .catch(() => { /* fall back to stored English titles */ });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [titlesKey, locale]);
 
   // Live offers (admin-featured coupons) — shown as static "Shop ₹X & above →
   // CODE · Y% off" lines. The customer applies the code manually at checkout.
@@ -96,7 +121,7 @@ export default function CartDrawer() {
 
               <ul className="divide-y divide-line">
                 {items.map((item) => (
-                  <Line key={item.key} item={item} onQty={setQty} onRemove={remove} onNavigate={closeCart} />
+                  <Line key={item.key} item={item} title={titleMap[item.title] ?? item.title} onQty={setQty} onRemove={remove} onNavigate={closeCart} />
                 ))}
               </ul>
             </div>
@@ -143,11 +168,13 @@ export default function CartDrawer() {
 
 function Line({
   item,
+  title,
   onQty,
   onRemove,
   onNavigate,
 }: {
   item: CartItem;
+  title: string; // localized title for display (falls back to item.title)
   onQty: (key: string, qty: number) => void;
   onRemove: (key: string) => void;
   onNavigate: () => void;
@@ -162,8 +189,8 @@ function Line({
 
   return (
     <li className="flex gap-4 py-5">
-      <a href={href} onClick={onNavigate} aria-label={item.title} className="relative h-[6.25rem] w-[4.6875rem] shrink-0 overflow-hidden bg-white">
-        <Image src={item.image} alt={item.title} fill sizes="75px" className="object-cover" />
+      <a href={href} onClick={onNavigate} aria-label={title} className="relative h-[6.25rem] w-[4.6875rem] shrink-0 overflow-hidden bg-white">
+        <Image src={item.image} alt={title} fill sizes="75px" className="object-cover" />
       </a>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -172,7 +199,7 @@ function Line({
           onClick={onNavigate}
           className="font-heading text-[0.8125rem] font-light uppercase leading-snug tracking-[0.08em] text-espresso hover:text-taupe transition-colors"
         >
-          {item.title}
+          {title}
         </a>
 
         <p className="mt-1 text-sm text-espresso/80">

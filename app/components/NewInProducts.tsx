@@ -51,7 +51,7 @@ function priceOf(p: Product): number {
 
 export default function NewInProducts() {
   // Real "New Arrivals" products (distinct from the shop catalogue) via /api/new-in.
-  const { data, loading } = useFetch<Product[]>(getNewIn);
+  const { data, loading } = useFetch<Product[]>(getNewIn, "new-in");
 
   const [sort, setSort] = useState<SortKey>("featured");
   const [sortOpen, setSortOpen] = useState(false);

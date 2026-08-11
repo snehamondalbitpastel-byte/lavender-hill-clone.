@@ -10,27 +10,19 @@ type Cat = {
   id: number;
   handle: string;
   label: string;
-  parentId: number | null;
   heading: string;
   description: string;
+  bottomHeading: string;
   bottomDescription: string;
+  bannerImage: string;
+  relatedHandles: string[];
   source: string;
-  page: string;
+  parentId: number | null;
 };
 
-// The listing pages a category can be shown on. The value is stored on the
-// category; the label is what the storefront/admin display. Keep in sync with
-// normalizePage() in app/api/admin/categories/route.ts.
-const PAGE_OPTIONS: { value: string; label: string }[] = [
-  { value: "shop", label: "Shop" },
-  { value: "new-in", label: "New In" },
-  { value: "sale", label: "Sale" },
-];
-const pageLabel = (v: string) =>
-  PAGE_OPTIONS.find((p) => p.value === v)?.label ?? "Shop";
-
 // How this collection's product grid is filled (mirrors normalizeSource on the
-// server). "category" = products tagged with this collection's handle.
+// server). "category" = products tagged with this collection's handle; the rest
+// fill automatically from a product flag / sale price.
 const SOURCE_OPTIONS: { value: string; label: string }[] = [
   { value: "category", label: "Products tagged in this collection" },
   { value: "all", label: "All products (Shop)" },
@@ -38,47 +30,21 @@ const SOURCE_OPTIONS: { value: string; label: string }[] = [
   { value: "sale", label: "On-sale products" },
   { value: "bestseller", label: "Bestseller products" },
 ];
+const sourceLabel = (v: string) => SOURCE_OPTIONS.find((o) => o.value === v)?.label ?? v;
 
 const inputCls =
   "border border-line rounded-md px-3 py-2 text-sm bg-white text-espresso focus:outline-none focus:border-espresso transition-colors w-full";
 const labelCls = "text-[11px] uppercase tracking-[0.1em] text-espresso/55 mb-1 block";
 
+const EMPTY = { label: "", heading: "", description: "", bottomHeading: "", bottomDescription: "", bannerImage: "", relatedHandles: [] as string[], source: "category", parentId: null as number | null };
+
 export default function CategoriesManager({ categories, products = [] }: { categories: Cat[]; products?: PickerProduct[] }) {
   const router = useRouter();
   const [label, setLabel] = useState("");
-  const [parentId, setParentId] = useState("");
-  const [page, setPage] = useState("shop");
   const [busy, setBusy] = useState(false);
-  const [pendingDel, setPendingDel] = useState<{ id: number; label: string; kids: number } | null>(null);
+  const [pendingDel, setPendingDel] = useState<{ id: number; label: string } | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
-  const [ed, setEd] = useState({ label: "", heading: "", parentId: "", description: "", bottomDescription: "", source: "category", page: "shop" });
-
-  const childrenOf = (pid: number | null) => categories.filter((c) => c.parentId === pid);
-
-  // Flatten the tree (pre-order) with depth — used for the parent dropdowns so
-  // you can nest under ANY level, not just the top.
-  function flatten(pid: number | null, depth: number, acc: { c: Cat; depth: number }[]) {
-    for (const c of childrenOf(pid)) {
-      acc.push({ c, depth });
-      flatten(c.id, depth + 1, acc);
-    }
-    return acc;
-  }
-  const flat = flatten(null, 0, []);
-
-  // A category can't become a child of itself or of its own descendants.
-  function descendantIds(id: number): Set<number> {
-    const set = new Set<number>();
-    const stack = [id];
-    while (stack.length) {
-      const cur = stack.pop() as number;
-      for (const ch of childrenOf(cur)) {
-        set.add(ch.id);
-        stack.push(ch.id);
-      }
-    }
-    return set;
-  }
+  const [ed, setEd] = useState<typeof EMPTY>(EMPTY);
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -87,11 +53,9 @@ export default function CategoriesManager({ categories, products = [] }: { categ
     await fetch("/api/admin/categories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ label, parentId: parentId || null, page }),
+      body: JSON.stringify({ label }),
     });
     setLabel("");
-    setParentId("");
-    setPage("shop");
     setBusy(false);
     toast.success("Collection added");
     router.refresh();
@@ -102,11 +66,13 @@ export default function CategoriesManager({ categories, products = [] }: { categ
     setEd({
       label: c.label,
       heading: c.heading ?? "",
-      parentId: c.parentId ? String(c.parentId) : "",
       description: c.description ?? "",
+      bottomHeading: c.bottomHeading ?? "",
       bottomDescription: c.bottomDescription ?? "",
+      bannerImage: c.bannerImage ?? "",
+      relatedHandles: c.relatedHandles ?? [],
       source: c.source ?? "category",
-      page: c.page ?? "shop",
+      parentId: c.parentId ?? null,
     });
   }
 
@@ -115,7 +81,7 @@ export default function CategoriesManager({ categories, products = [] }: { categ
     await fetch(`/api/admin/categories/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...ed, parentId: ed.parentId || null }),
+      body: JSON.stringify(ed),
     });
     setEditId(null);
     setBusy(false);
@@ -137,88 +103,125 @@ export default function CategoriesManager({ categories, products = [] }: { categ
     }
   }
 
+  const toggleRelated = (handle: string) =>
+    setEd((s) => ({
+      ...s,
+      relatedHandles: s.relatedHandles.includes(handle)
+        ? s.relatedHandles.filter((h) => h !== handle)
+        : [...s.relatedHandles, handle],
+    }));
+
   // ---- Render helpers return JSX (NOT sub-components) so inputs keep focus. ----
-  function rowNode(c: Cat, depth: number) {
-    const subs = childrenOf(c.id).length;
+  function rowNode(c: Cat) {
+    const parent = c.parentId ? categories.find((o) => o.id === c.parentId) : null;
     return (
-      <div className="flex items-center gap-3 py-3 pr-4" style={{ paddingLeft: 16 + depth * 24 }}>
-        {depth > 0 && <span className="text-espresso/30 -ml-4">↳</span>}
+      <div className="flex items-center gap-3 py-3 px-4">
         <div className="flex-1 min-w-0">
-          <span className="text-sm text-espresso">{c.label}</span>
+          <span className="text-sm text-espresso">{parent && <span className="text-espresso/40">↳ </span>}{c.label}</span>
+          {parent && (
+            <span className="ml-2 text-[10px] uppercase tracking-[0.08em] rounded px-1.5 py-0.5 bg-espresso/8 text-espresso/60">sub of {parent.label}</span>
+          )}
           {c.description && (
             <span className="block text-[11px] text-espresso/40 truncate max-w-md">{c.description}</span>
           )}
         </div>
-        <span className="text-[10px] uppercase tracking-[0.08em] shrink-0 rounded px-2 py-0.5 bg-espresso/8 text-espresso/70">
-          {pageLabel(c.page)}
+        <span className="text-[10px] uppercase tracking-[0.08em] shrink-0 rounded px-2 py-0.5 bg-espresso/8 text-espresso/70 hidden sm:inline">
+          {sourceLabel(c.source)}
         </span>
-        <span
-          className={`text-[10px] uppercase tracking-[0.08em] shrink-0 rounded px-2 py-0.5 ${
-            subs ? "bg-taupe/15 text-taupe" : "text-espresso/30"
-          }`}
-        >
-          {subs ? `${subs} sub` : "leaf"}
-        </span>
-        <span className="text-[11px] text-espresso/35 font-mono shrink-0 hidden sm:inline">{c.handle}</span>
+        <span className="text-[11px] text-espresso/35 font-mono shrink-0 hidden md:inline">{c.handle}</span>
         <button onClick={() => startEdit(c)} className="text-xs text-espresso hover:underline shrink-0">Edit</button>
-        <button onClick={() => setPendingDel({ id: c.id, label: c.label, kids: childrenOf(c.id).length })} className="text-xs text-[#b23a3a] hover:underline shrink-0">Delete</button>
+        <button onClick={() => setPendingDel({ id: c.id, label: c.label })} className="text-xs text-[#b23a3a] hover:underline shrink-0">Delete</button>
       </div>
     );
   }
 
-  function editNode(c: Cat, depth: number) {
-    const invalid = descendantIds(c.id);
+  function editNode(c: Cat) {
+    const others = categories.filter((o) => o.id !== c.id);
     return (
-      <div className="py-4 pr-4 bg-white/60 border-l-2 border-espresso flex flex-col gap-3" style={{ paddingLeft: 16 + depth * 24 }}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className={labelCls}>Name (menu / tag)</label>
-            <input className={inputCls} value={ed.label} onChange={(e) => setEd({ ...ed, label: e.target.value })} />
-          </div>
-          <div>
-            <label className={labelCls}>Under (parent)</label>
-            <select className={inputCls} value={ed.parentId} onChange={(e) => setEd({ ...ed, parentId: e.target.value })}>
-              <option value="">— top level —</option>
-              {flat
-                .filter((f) => f.c.id !== c.id && !invalid.has(f.c.id))
-                .map((f) => (
-                  <option key={f.c.id} value={f.c.id}>{`${"— ".repeat(f.depth)}${f.c.label}`}</option>
-                ))}
-            </select>
-          </div>
-          <div>
-            <label className={labelCls}>Shows on (page)</label>
-            <select className={inputCls} value={ed.page} onChange={(e) => setEd({ ...ed, page: e.target.value })}>
-              {PAGE_OPTIONS.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="sm:col-span-2">
-            <label className={labelCls}>Products in this collection (source)</label>
-            <select className={inputCls} value={ed.source} onChange={(e) => setEd({ ...ed, source: e.target.value })}>
-              {SOURCE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
+      <div className="py-4 px-4 bg-white/60 border-l-2 border-espresso flex flex-col gap-3">
+        <div>
+          <label className={labelCls}>Name (menu / tag)</label>
+          <input className={inputCls} value={ed.label} onChange={(e) => setEd({ ...ed, label: e.target.value })} />
         </div>
+
+        <div>
+          <label className={labelCls}>Parent collection <span className="normal-case text-espresso/40">(makes this a sub-category — its page opens at /collections/&lt;parent&gt;/{c.handle})</span></label>
+          <select
+            className={inputCls}
+            value={ed.parentId ?? ""}
+            onChange={(e) => setEd({ ...ed, parentId: e.target.value ? Number(e.target.value) : null })}
+          >
+            <option value="">— none (top-level collection) —</option>
+            {others.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label className={labelCls}>Banner heading <span className="normal-case text-espresso/40">(falls back to the name)</span></label>
           <input className={inputCls} value={ed.heading} onChange={(e) => setEd({ ...ed, heading: e.target.value })} placeholder="e.g. Luxury Women's T-shirts" />
         </div>
+
         <div>
-          <label className={labelCls}>Banner description <span className="normal-case text-espresso/40">(top — shown under the heading)</span></label>
-          <textarea className={`${inputCls} min-h-[90px] resize-y`} value={ed.description} onChange={(e) => setEd({ ...ed, description: e.target.value })} placeholder="Shown under the heading on this collection's page…" />
+          <label className={labelCls}>Banner description <span className="normal-case text-espresso/40">(top — under the heading)</span></label>
+          <textarea className={`${inputCls} min-h-[80px] resize-y`} value={ed.description} onChange={(e) => setEd({ ...ed, description: e.target.value })} placeholder="Shown under the heading on this collection's page…" />
         </div>
+
         <div>
-          <label className={labelCls}>Bottom description <span className="normal-case text-espresso/40">(optional — closing note after the products)</span></label>
-          <textarea className={`${inputCls} min-h-[90px] resize-y`} value={ed.bottomDescription} onChange={(e) => setEd({ ...ed, bottomDescription: e.target.value })} placeholder="Optional closing paragraph shown below the product grid…" />
+          <label className={labelCls}>Banner image URL <span className="normal-case text-espresso/40">(optional — shown at the top)</span></label>
+          <input className={inputCls} value={ed.bannerImage} onChange={(e) => setEd({ ...ed, bannerImage: e.target.value })} placeholder="https://… (paste an image URL)" />
+          {ed.bannerImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={ed.bannerImage} alt="" className="mt-2 h-24 w-full max-w-md rounded-md border border-line object-cover" />
+          )}
         </div>
+
+        <div>
+          <label className={labelCls}>Show these collections on this page <span className="normal-case text-espresso/40">(clickable options, e.g. New In → T-shirts · Nightwear)</span></label>
+          {others.length === 0 ? (
+            <p className="text-[13px] text-espresso/45">Create other collections first, then tick them here.</p>
+          ) : (
+            <div className="max-h-48 overflow-y-auto rounded-md border border-line bg-white p-2 flex flex-col gap-1">
+              {others.map((o) => (
+                <label key={o.id} className="flex items-center gap-2.5 py-1 cursor-pointer text-sm text-espresso">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 accent-espresso shrink-0"
+                    checked={ed.relatedHandles.includes(o.handle)}
+                    onChange={() => toggleRelated(o.handle)}
+                  />
+                  {o.label}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className={labelCls}>Products in this collection (source)</label>
+          <select className={inputCls} value={ed.source} onChange={(e) => setEd({ ...ed, source: e.target.value })}>
+            {SOURCE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label className={labelCls}>Products in this collection</label>
           <CollectionProductsPicker collectionId={c.id} handle={c.handle} source={ed.source} products={products} />
         </div>
+
+        <div>
+          <label className={labelCls}>Bottom heading <span className="normal-case text-espresso/40">(optional — above the closing note)</span></label>
+          <input className={inputCls} value={ed.bottomHeading} onChange={(e) => setEd({ ...ed, bottomHeading: e.target.value })} placeholder="e.g. Our Commitment to Quality" />
+        </div>
+
+        <div>
+          <label className={labelCls}>Bottom description <span className="normal-case text-espresso/40">(optional — closing note after the products)</span></label>
+          <textarea className={`${inputCls} min-h-[80px] resize-y`} value={ed.bottomDescription} onChange={(e) => setEd({ ...ed, bottomDescription: e.target.value })} placeholder="Optional closing paragraph shown below the product grid…" />
+        </div>
+
         <div className="flex items-center gap-2">
           <button onClick={() => save(c.id)} disabled={busy} className="text-xs font-medium text-white bg-espresso rounded-md px-4 py-2">Save details</button>
           <button onClick={() => setEditId(null)} className="text-xs text-espresso/60 px-2">Cancel</button>
@@ -227,47 +230,22 @@ export default function CategoriesManager({ categories, products = [] }: { categ
     );
   }
 
-  // Recursive pre-order render → a flat list of rows, indented by depth.
-  function renderTree(pid: number | null, depth: number): React.ReactNode[] {
-    const out: React.ReactNode[] = [];
-    for (const c of childrenOf(pid)) {
-      out.push(<div key={c.id}>{editId === c.id ? editNode(c, depth) : rowNode(c, depth)}</div>);
-      out.push(...renderTree(c.id, depth + 1));
-    }
-    return out;
-  }
-
   return (
     <div className="flex flex-col gap-6">
-      {/* Add — can nest under ANY existing category */}
+      {/* Add — every collection is independent (no parent/child). */}
       <form onSubmit={add} className="bg-cream border border-line rounded-xl shadow-soft p-5 flex flex-wrap items-end gap-3">
         <div className="flex-1 min-w-[180px]">
           <label className={labelCls}>New collection</label>
-          <input className={inputCls} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Short Sleeve T-shirts" />
-        </div>
-        <div>
-          <label className={labelCls}>Under</label>
-          <select className={inputCls} value={parentId} onChange={(e) => setParentId(e.target.value)}>
-            <option value="">— top level —</option>
-            {flat.map((f) => (
-              <option key={f.c.id} value={f.c.id}>{`${"— ".repeat(f.depth)}${f.c.label}`}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className={labelCls}>Shows on</label>
-          <select className={inputCls} value={page} onChange={(e) => setPage(e.target.value)}>
-            {PAGE_OPTIONS.map((p) => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
-          </select>
+          <input className={inputCls} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Women's Luxury T-shirts" />
         </div>
         <button type="submit" disabled={busy} className="btn-lh">+ Add</button>
       </form>
 
-      {/* Full tree — any depth, indented, with sub-count / leaf badge */}
+      {/* Flat list — each collection is edited on its own. */}
       <div className="bg-cream border border-line rounded-xl shadow-soft divide-y divide-line">
-        {renderTree(null, 0)}
+        {categories.map((c) => (
+          <div key={c.id}>{editId === c.id ? editNode(c) : rowNode(c)}</div>
+        ))}
         {categories.length === 0 && (
           <p className="px-4 py-8 text-center text-sm text-espresso/40">No collections yet.</p>
         )}
@@ -276,11 +254,7 @@ export default function CategoriesManager({ categories, products = [] }: { categ
       <ConfirmModal
         open={!!pendingDel}
         title="Delete this collection?"
-        message={
-          pendingDel?.kids
-            ? `Its ${pendingDel.kids} sub-collection${pendingDel.kids === 1 ? "" : "s"} will move up one level.`
-            : "This can't be undone."
-        }
+        message="This can't be undone. Products stay — they're just no longer tagged in this collection."
         busy={busy}
         onConfirm={doDelete}
         onCancel={() => setPendingDel(null)}

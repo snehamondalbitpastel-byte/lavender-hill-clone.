@@ -1,7 +1,8 @@
 import Image from "next/image";
 
 // "Discover What The Editors Say" — the live site's logo-list (press) section.
-// Press quote cards live in /public; links point to # (no press page here).
+// Each card links to the dynamic Press / As Seen on page (/pages/press-as-seen-on).
+const PRESS_HREF = "/pages/press-as-seen-on";
 const PRESS = [
   { name: "The Telegraph", src: "/press-telegraph-3.png" },
   { name: "Stylist Magazine", src: "/press-stylist.png" },
@@ -22,7 +23,7 @@ export default function PressLogos() {
           {PRESS.map((p, i) => (
             <a
               key={i}
-              href="#"
+              href={PRESS_HREF}
               className="shrink-0 snap-center flex items-center justify-center p-4 w-[70vw] min-[700px]:w-auto"
             >
               <Image

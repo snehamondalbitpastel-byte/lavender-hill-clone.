@@ -8,6 +8,7 @@
 
 import nodemailer from "nodemailer";
 import { RETURN_WINDOW_DAYS } from "./order-status";
+import { getDictionary } from "./i18n";
 
 const host = process.env.SMTP_HOST || "smtp.gmail.com";
 const port = Number(process.env.SMTP_PORT || 587);
@@ -71,24 +72,34 @@ async function deliver(msg: { to: string; subject: string; text: string; html: s
   console.log(`\n✉  [email:dev] To ${msg.to} — ${msg.subject}\n`);
 }
 
-export async function sendCode(email: string, code: string): Promise<void> {
+export async function sendCode(email: string, code: string, locale = "en"): Promise<void> {
   // Mirrors the live Lavender Hill verification email: centred logo, big spaced
-  // code, single-use note, footer with policy links.
+  // code, single-use note, footer with policy links. Localized to the shopper's
+  // selected UI language (passed from the request-code route's locale cookie);
+  // the code digits + brand name stay as-is.
+  const dict = await getDictionary(locale);
+  const tr = (key: string, fallback: string) => dict[key] ?? fallback;
+  const subject = tr("email.code_subject", "{n} is your code").replace("{n}", code);
+  const verifyLabel = tr("email.verification_code", "Your verification code:");
+  const onceNote = tr("email.code_once", "This code can only be used once. It expires in 10 minutes.");
+  const privacy = tr("auth.privacy", "Privacy policy");
+  const terms = tr("auth.terms", "Terms of service");
+
   const html = `
   <div style="background:#ffffff;padding:48px 20px;font-family:Helvetica,Arial,sans-serif;">
     <div style="max-width:500px;margin:0 auto;text-align:center;">
       <div style="font-family:Georgia,'Times New Roman',serif;font-size:36px;line-height:1;letter-spacing:1px;color:#8a8f9e;font-weight:400;">Lavender Hill</div>
       <div style="font-size:11px;letter-spacing:6px;color:#a7abb6;margin-top:8px;">&mdash; ENGLAND &mdash;</div>
 
-      <p style="font-size:15px;color:#3a3a3a;margin:52px 0 20px;">Your verification code:</p>
+      <p style="font-size:15px;color:#3a3a3a;margin:52px 0 20px;">${verifyLabel}</p>
       <div style="font-size:34px;line-height:1;letter-spacing:14px;font-weight:700;color:#2f2a24;padding-left:14px;">${code}</div>
-      <p style="font-size:14px;color:#6b6b6b;margin:24px 0 0;">This code can only be used once. It expires in 10 minutes.</p>
+      <p style="font-size:14px;color:#6b6b6b;margin:24px 0 0;">${onceNote}</p>
 
       <div style="margin-top:56px;border-top:1px solid #eeeeee;padding-top:22px;">
         <p style="font-size:12px;color:#9b9b9b;margin:0;">&copy; Lavender Hill Clothing</p>
         <p style="font-size:12px;margin:10px 0 0;">
-          <a href="#" style="color:#5b6b86;text-decoration:none;margin:0 8px;">Privacy policy</a>
-          <a href="#" style="color:#5b6b86;text-decoration:none;margin:0 8px;">Terms of service</a>
+          <a href="#" style="color:#5b6b86;text-decoration:none;margin:0 8px;">${privacy}</a>
+          <a href="#" style="color:#5b6b86;text-decoration:none;margin:0 8px;">${terms}</a>
         </p>
       </div>
     </div>
@@ -96,8 +107,8 @@ export async function sendCode(email: string, code: string): Promise<void> {
 
   await deliver({
     to: email,
-    subject: `${code} is your code`,
-    text: `Your Lavender Hill verification code is ${code}. This code can only be used once. It expires in 10 minutes.`,
+    subject,
+    text: `${verifyLabel} ${code}. ${onceNote}`,
     html,
   });
 }

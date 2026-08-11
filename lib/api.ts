@@ -5,7 +5,12 @@
 // ============================================================
 
 async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`/api${path}`);
+  // no-store → always fetch fresh so admin changes (new/edited products,
+  // categories, collections, hero, looks, etc.) reflect on the storefront
+  // immediately. Without this the browser can serve a stale cached response,
+  // so an edited product's new collection tag wouldn't appear until a hard
+  // refresh — breaking the two-way admin ↔ storefront sync.
+  const res = await fetch(`/api${path}`, { cache: "no-store" });
   if (!res.ok) {
     throw new Error(`API request failed (${res.status}) for ${path}`);
   }
@@ -102,6 +107,9 @@ export type MenuGroup = {
   id: number;
   title: string;
   href: string;
+  location: string;
+  image: string;
+  caption: string;
   links: MenuLink[];
 };
 
@@ -210,6 +218,7 @@ export type ProductFull = {
   productType: string;
   colours: ProductColour[]; // each colour carries its own stock
   sizes: string[];
+  sizeChart: boolean; // true → UK 8–16 sizing + "Size chart" modal link
   content: ProductContent;
   related: RelatedProduct[];
 };
@@ -231,8 +240,8 @@ export function getLooks(): Promise<Look[]> {
   return apiFetch<Look[]>("/looks");
 }
 
-export function getMenu(): Promise<MenuGroup[]> {
-  return apiFetch<MenuGroup[]>("/menu");
+export function getMenu(location?: string): Promise<MenuGroup[]> {
+  return apiFetch<MenuGroup[]>(location ? `/menu?location=${encodeURIComponent(location)}` : "/menu");
 }
 
 export type Crumb = { label: string; href: string };

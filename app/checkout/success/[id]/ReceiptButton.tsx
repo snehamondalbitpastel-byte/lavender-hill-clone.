@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/app/components/LocaleProvider";
+
 type OrderItem = {
   title: string; colour: string; size: string;
   price: number; qty: number; bundleDiscount: number;
@@ -20,6 +22,7 @@ const inr = (n: number) =>
   "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function ReceiptButton({ order }: { order: OrderData }) {
+  const { t } = useT();
   function download() {
     const rows = order.items
       .map((it) => {
@@ -61,7 +64,7 @@ ${order.discount > 0 ? `<tr><td>Discounts</td><td style="text-align:right">− $
 
   return (
     <button type="button" onClick={download} className="btn-lh">
-      Download receipt
+      {t("order.download_receipt", "Download receipt")}
     </button>
   );
 }

@@ -20,7 +20,7 @@ function Arrow({ next = false }: { next?: boolean }) {
 }
 
 export default function BestSellers() {
-  const { data, loading } = useFetch<Card[]>(getBestsellerCards);
+  const { data, loading } = useFetch<Card[]>(getBestsellerCards, "cards:bestseller");
   const scroller = useRef<HTMLDivElement>(null);
   const drag = useRef({ down: false, startX: 0, startLeft: 0, moved: false });
 
@@ -72,7 +72,7 @@ export default function BestSellers() {
     "hidden md:flex absolute top-[38%] z-10 h-10 w-10 items-center justify-center rounded-full border border-line bg-cream text-espresso shadow-soft transition-colors hover:bg-espresso hover:text-cream";
 
   return (
-    <section className="py-16 md:py-24 bg-cream">
+    <section className="py-16 md:py-24 bg-beige">
       <div className="text-center mb-10 md:mb-14 px-4">
         <p className="eyebrow text-espresso/60 mb-3">Shop the favourites</p>
         <h2 className="text-2xl md:text-3xl">Our Bestselling T-Shirts</h2>

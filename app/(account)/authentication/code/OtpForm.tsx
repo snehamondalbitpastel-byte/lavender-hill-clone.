@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import AccountLogo from "../../_components/AccountLogo";
+import { useT } from "@/app/components/LocaleProvider";
 
 const LEN = 6;
 
@@ -17,6 +18,7 @@ export default function OtpForm({
   redirect?: string;
 }) {
   const router = useRouter();
+  const { t } = useT();
   // Where to go after a successful sign-in — the product the guest came from,
   // else the account. Only internal paths are allowed (no open redirect).
   const dest =
@@ -60,11 +62,11 @@ export default function OtpForm({
         return;
       }
       const data = await res.json().catch(() => ({}));
-      setError(data.error || "That code isn't right. Try again.");
+      setError(data.error || t("auth.err_code", "That code isn't right. Try again."));
       setDigits(Array(LEN).fill(""));
       focusAt(0);
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("auth.err_network", "Network error. Please try again."));
     }
     setBusy(false);
   }
@@ -87,10 +89,10 @@ export default function OtpForm({
         focusAt(0);
       } else {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || "Couldn't resend the code.");
+        setError(data.error || t("auth.err_resend", "Couldn't resend the code."));
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("auth.err_network", "Network error. Please try again."));
     }
     setResending(false);
   }
@@ -142,7 +144,7 @@ export default function OtpForm({
             className="h-9 w-9 animate-spin rounded-full border-2 border-[var(--acc-line)] border-t-[#1a1a1a]"
             aria-hidden="true"
           />
-          <p className="mt-4 text-[0.9rem] text-[#6b6b6b]">Signing you in…</p>
+          <p className="mt-4 text-[0.9rem] text-[#6b6b6b]">{t("auth.signing_in", "Signing you in…")}</p>
         </div>
       )}
 
@@ -152,14 +154,14 @@ export default function OtpForm({
 
       <main className="flex w-full flex-1 items-center justify-center">
         <div className="w-full max-w-[27.5rem]">
-          <h1 className="text-[1.75rem]">Enter code</h1>
+          <h1 className="text-[1.75rem]">{t("auth.enter_code", "Enter code")}</h1>
           <p className="mt-2 text-[0.95rem] text-[#6b6b6b]">
-            Sent to {email || "your email"}{" "}
+            {t("auth.sent_to", "Sent to")} {email || t("auth.your_email", "your email")}{" "}
             <Link
               href="/authentication/login"
               className="ml-1 text-[#1a1a1a] underline decoration-[#c4c4c4] underline-offset-2 hover:decoration-[#1a1a1a]"
             >
-              Change
+              {t("auth.change", "Change")}
             </Link>
           </p>
 
@@ -191,14 +193,14 @@ export default function OtpForm({
           )}
 
           <p className="mt-5 text-[0.85rem] text-[#6b6b6b]">
-            {resent ? "A new code is on its way." : "Didn't get a code?"}{" "}
+            {resent ? t("auth.code_on_way", "A new code is on its way.") : t("auth.didnt_get", "Didn't get a code?")}{" "}
             <button
               type="button"
               onClick={resend}
               disabled={resending}
               className="text-[#1a1a1a] underline decoration-[#c4c4c4] underline-offset-2 transition-colors hover:decoration-[#1a1a1a] disabled:opacity-50"
             >
-              {resending ? "Sending…" : "Resend"}
+              {resending ? t("auth.sending", "Sending…") : t("auth.resend", "Resend")}
             </button>
           </p>
         </div>
@@ -209,7 +211,7 @@ export default function OtpForm({
           href="#"
           className="text-[0.85rem] text-[#6b6b6b] transition-colors hover:text-[#1a1a1a]"
         >
-          Privacy policy
+          {t("auth.privacy", "Privacy policy")}
         </a>
       </footer>
     </div>

@@ -1,4 +1,5 @@
 import { requestCode } from "@/lib/customer-auth";
+import { getLocale } from "@/lib/i18n";
 
 // POST /api/auth/request-code — { email, marketing? }. Generates + emails a
 // 6-digit code. Always the same shape of response for valid emails (no leak of
@@ -8,7 +9,9 @@ export async function POST(request: Request) {
   const email = String(body.email ?? "");
   const marketing = body.marketing !== false; // default true (checkbox on)
 
-  const result = await requestCode(email, marketing);
+  // Localize the code email to the shopper's currently-selected UI language.
+  const locale = await getLocale();
+  const result = await requestCode(email, marketing, locale);
   if (!result.ok) {
     if (result.error === "rate_limited") {
       return Response.json(

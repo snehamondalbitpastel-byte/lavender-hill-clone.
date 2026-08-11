@@ -20,9 +20,11 @@ export default function AccountLoading() {
 
       <main className="mx-auto w-full max-w-[1180px] flex-1 px-6 py-6 md:px-10 md:py-10">
         <div className="flex flex-col gap-8 md:flex-row md:gap-16">
+          {/* Nav labels shimmer (no text) so the localized "Orders"/"Profile"
+              never flash their English fallback during load. */}
           <nav className="flex shrink-0 flex-row gap-6 md:w-[180px] md:flex-col md:gap-4">
-            <span className="text-[1.15rem] text-[#8f7060]">Orders</span>
-            <span className="text-[1.15rem] text-[#8f7060]">Profile</span>
+            <span className={`${bar} h-5 w-20`} />
+            <span className={`${bar} h-5 w-20`} />
           </nav>
 
           <div className="flex w-full max-w-[42rem] flex-1 flex-col gap-8">

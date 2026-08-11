@@ -4,12 +4,16 @@ import LooksManager from "@/app/components/admin/LooksManager";
 
 export default async function AdminLooksPage() {
   await requireAdmin();
-  const rows = await prisma.look.findMany({ orderBy: { order: "asc" } });
+  const [rows, products] = await Promise.all([
+    prisma.look.findMany({ orderBy: { order: "asc" } }),
+    prisma.product.findMany({ orderBy: [{ order: "asc" }, { id: "asc" }], select: { id: true, title: true, slug: true } }),
+  ]);
   const looks = rows.map((l) => ({
     id: l.id,
     look: l.look,
     hotspotTop: l.hotspotTop,
     hotspotLeft: l.hotspotLeft,
+    productSlug: l.productSlug,
     name: l.name,
     price: l.price,
     productImg: l.productImg,
@@ -28,7 +32,7 @@ export default async function AdminLooksPage() {
           The home-page shop-the-look carousel. Add, edit, reorder — each look links to a product.
         </p>
       </header>
-      <LooksManager looks={looks} />
+      <LooksManager looks={looks} products={products} />
     </div>
   );
 }

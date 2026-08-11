@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { AddressData } from "./AddressModal";
+import { useT } from "@/app/components/LocaleProvider";
 
 // Lazy so the flag-icon bundle only loads when the address modal is opened.
 const AddressModal = dynamic(() => import("./AddressModal"), { ssr: false });
@@ -29,6 +30,7 @@ export default function ProfilePanels({
   addresses: AddressData[];
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(initialName);
   const [savingName, setSavingName] = useState(false);
@@ -68,7 +70,7 @@ export default function ProfilePanels({
   }
 
   async function deleteAddress(id: number) {
-    if (!confirm("Delete this address?")) return;
+    if (!confirm(t("account.delete_address_confirm", "Delete this address?"))) return;
     await fetch(`/api/account/addresses/${id}`, { method: "DELETE" });
     router.refresh();
   }
@@ -78,34 +80,34 @@ export default function ProfilePanels({
       {/* Contact */}
       <section aria-label="Contact">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className={SECTION_TITLE}>Contact</h2>
+          <h2 className={SECTION_TITLE}>{t("account.contact", "Contact")}</h2>
           {!editing && (
             <button type="button" onClick={() => setEditing(true)} className={PILL_BTN}>
-              Edit
+              {t("account.edit", "Edit")}
             </button>
           )}
         </div>
         <div className={CARD}>
           {!editing ? (
             <>
-              <Row label="Email" value={email} />
-              {name && <Row label="Name" value={name} border />}
+              <Row label={t("account.email", "Email")} value={email} />
+              {name && <Row label={t("account.name", "Name")} value={name} border />}
             </>
           ) : (
             <div className="flex flex-col gap-4 p-5">
               <div>
-                <p className="mb-1 text-[0.8rem] text-[var(--acc-muted)]">Email</p>
+                <p className="mb-1 text-[0.8rem] text-[var(--acc-muted)]">{t("account.email", "Email")}</p>
                 <p className="text-[0.95rem] text-[var(--acc-fg)] break-all">{email}</p>
               </div>
               <div>
                 <label htmlFor="pf-name" className="mb-1 block text-[0.8rem] text-[var(--acc-muted)]">
-                  Name
+                  {t("account.name", "Name")}
                 </label>
                 <input
                   id="pf-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Add your name"
+                  placeholder={t("account.add_your_name", "Add your name")}
                   className="h-11 w-full rounded-lg border border-[var(--acc-line)] px-3 text-[0.95rem] text-[var(--acc-fg)] outline-none transition-colors focus:border-[#1a1a1a]"
                 />
               </div>
@@ -116,7 +118,7 @@ export default function ProfilePanels({
                   disabled={savingName}
                   className="rounded-md bg-[#1a1a1a] px-4 py-2 text-[0.85rem] text-white hover:bg-black disabled:opacity-50"
                 >
-                  {savingName ? "Saving…" : "Save"}
+                  {savingName ? t("account.saving", "Saving…") : t("account.save", "Save")}
                 </button>
                 <button
                   type="button"
@@ -126,7 +128,7 @@ export default function ProfilePanels({
                   }}
                   className="px-3 text-[0.85rem] text-[var(--acc-muted)] hover:text-[var(--acc-fg)]"
                 >
-                  Cancel
+                  {t("account.cancel", "Cancel")}
                 </button>
               </div>
             </div>
@@ -137,9 +139,9 @@ export default function ProfilePanels({
       {/* Addresses */}
       <section aria-label="Addresses">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className={SECTION_TITLE}>Addresses</h2>
+          <h2 className={SECTION_TITLE}>{t("account.addresses", "Addresses")}</h2>
           <button type="button" onClick={() => setModal({ open: true })} className={PILL_BTN}>
-            Add
+            {t("account.add", "Add")}
           </button>
         </div>
 
@@ -151,7 +153,7 @@ export default function ProfilePanels({
                 <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5" />
               </svg>
             </span>
-            <span className="text-[0.95rem] text-[var(--acc-muted)]">No addresses added</span>
+            <span className="text-[0.95rem] text-[var(--acc-muted)]">{t("account.no_addresses", "No addresses added")}</span>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -172,16 +174,16 @@ export default function ProfilePanels({
                     {a.phone && <p className="text-[var(--acc-muted)]">{a.phone}</p>}
                     {a.isDefault && (
                       <span className="mt-2 inline-block rounded-full bg-[#f2f2f2] px-2.5 py-0.5 text-[0.75rem] text-[var(--acc-muted)]">
-                        Default
+                        {t("account.default", "Default")}
                       </span>
                     )}
                   </div>
                   <div className="flex shrink-0 gap-3 text-[0.85rem]">
                     <button type="button" onClick={() => setModal({ open: true, initial: a })} className="text-[var(--acc-fg)] hover:underline">
-                      Edit
+                      {t("account.edit", "Edit")}
                     </button>
                     <button type="button" onClick={() => a.id && deleteAddress(a.id)} className="text-[#c2334d] hover:underline">
-                      Delete
+                      {t("account.delete", "Delete")}
                     </button>
                   </div>
                 </div>
@@ -193,7 +195,7 @@ export default function ProfilePanels({
 
       {/* Marketing preferences */}
       <section aria-label="Marketing preferences">
-        <h2 className={`${SECTION_TITLE} mb-3`}>Marketing preferences</h2>
+        <h2 className={`${SECTION_TITLE} mb-3`}>{t("account.marketing", "Marketing preferences")}</h2>
         <div className={`${CARD} flex items-center gap-3 p-5`}>
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2f2f2] text-[var(--acc-muted)]">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -201,7 +203,7 @@ export default function ProfilePanels({
               <path d="m4 7 8 6 8-6" stroke="currentColor" strokeWidth="1.5" />
             </svg>
           </span>
-          <span className="flex-1 text-[0.95rem] text-[var(--acc-fg)]">Email</span>
+          <span className="flex-1 text-[0.95rem] text-[var(--acc-fg)]">{t("account.email", "Email")}</span>
           <button
             type="button"
             role="switch"

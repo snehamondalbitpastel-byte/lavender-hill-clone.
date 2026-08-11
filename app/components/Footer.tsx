@@ -1,6 +1,10 @@
+import { getLocale } from "@/lib/i18n";
+import { localizeMany } from "@/lib/i18n/translations";
+
 // Site footer — mirrors the live Lavender Hill footer (scheme-2 = beige).
 // Internal page links use # placeholders (those pages don't exist in the clone);
-// social links point to the real brand profiles.
+// social links point to the real brand profiles. All copy is translated for the
+// visitor's language via the engine+cache (localizeMany).
 
 const LINK_COLUMNS = [
   {
@@ -144,7 +148,24 @@ function PayCard({ method }: { method: string }) {
   );
 }
 
-export default function Footer() {
+export default async function Footer() {
+  // Translate every piece of footer copy for the visitor's language in one
+  // batched engine+cache pass. Base locale (English) → localizeMany is a no-op.
+  const locale = await getLocale();
+  const NEWSLETTER = [
+    "Newsletter",
+    "Sign up to our newsletter to receive exclusive offers.",
+    "E-mail",
+    "Subscribe",
+  ];
+  const sources = [
+    ...NEWSLETTER,
+    ...LINK_COLUMNS.flatMap((col) => [col.heading, ...col.links]),
+  ];
+  const values = await localizeMany(sources, locale);
+  const tmap = new Map(sources.map((s, i) => [s, values[i]]));
+  const t = (s: string) => tmap.get(s) ?? s;
+
   return (
     <footer className="bg-beige text-espresso mt-auto">
       {/* Full-width (.container = 100%) with the theme gutter — near edge-to-edge
@@ -154,20 +175,20 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10 lg:gap-8">
           {/* Newsletter */}
           <div>
-            <p className="eyebrow mb-4">Newsletter</p>
+            <p className="eyebrow mb-4">{t("Newsletter")}</p>
             <p className="text-sm text-espresso/70 mb-5 max-w-xs">
-              Sign up to our newsletter to receive exclusive offers.
+              {t("Sign up to our newsletter to receive exclusive offers.")}
             </p>
             <div className="max-w-xs">
               <input
                 type="email"
                 name="email"
-                placeholder="E-mail"
+                placeholder={t("E-mail")}
                 autoComplete="email"
                 className="w-full border border-espresso/25 bg-transparent px-3 py-3 text-sm outline-none transition-colors focus:border-espresso placeholder:text-espresso/50"
               />
               <button type="button" className="btn-lh mt-4 text-xs px-8 py-3">
-                Subscribe
+                {t("Subscribe")}
               </button>
             </div>
           </div>
@@ -175,7 +196,7 @@ export default function Footer() {
           {/* Link columns */}
           {LINK_COLUMNS.map((col) => (
             <div key={col.heading}>
-              <p className="eyebrow mb-5">{col.heading}</p>
+              <p className="eyebrow mb-5">{t(col.heading)}</p>
               <ul className="space-y-2.5">
                 {col.links.map((link) => (
                   <li key={link}>
@@ -183,7 +204,7 @@ export default function Footer() {
                       href="#"
                       className="text-sm text-espresso/70 hover:text-espresso transition-colors"
                     >
-                      {link}
+                      {t(link)}
                     </a>
                   </li>
                 ))}

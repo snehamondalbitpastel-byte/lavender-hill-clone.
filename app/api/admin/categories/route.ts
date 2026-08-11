@@ -14,6 +14,11 @@ export function normalizeSource(v: unknown): string {
   return (SOURCES as readonly string[]).includes(String(v)) ? String(v) : "category";
 }
 
+// Handles of other collections to show as options on this page (flat, ordered).
+export function normalizeRelated(v: unknown): string[] {
+  return Array.isArray(v) ? v.map((h) => String(h).trim()).filter(Boolean) : [];
+}
+
 // POST /api/admin/categories — create a category (optionally nested).
 export async function POST(request: Request) {
   if (!(await getAdmin())) {
@@ -45,7 +50,10 @@ export async function POST(request: Request) {
       source: normalizeSource(body.source),
       heading: String(body.heading ?? "").trim(),
       description: String(body.description ?? "").trim(),
+      bottomHeading: String(body.bottomHeading ?? "").trim(),
       bottomDescription: String(body.bottomDescription ?? "").trim(),
+      bannerImage: String(body.bannerImage ?? "").trim(),
+      relatedHandles: normalizeRelated(body.relatedHandles),
     },
   });
   return Response.json({ ok: true, id: cat.id });

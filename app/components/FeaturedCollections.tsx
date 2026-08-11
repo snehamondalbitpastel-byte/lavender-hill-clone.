@@ -6,7 +6,7 @@ import ProductCard from "./ProductCard";
 
 // "Our Bestselling T-Shirts" — the flagged subset via /api/products?bestseller=true.
 export default function FeaturedCollections() {
-  const { data: products } = useFetch<Product[]>(getBestsellers);
+  const { data: products } = useFetch<Product[]>(getBestsellers, "products:bestseller");
 
   return (
     <section className="py-16 md:py-24 bg-beige">

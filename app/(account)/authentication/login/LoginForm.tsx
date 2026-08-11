@@ -3,9 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import AccountLogo from "../../_components/AccountLogo";
+import { useT } from "@/app/components/LocaleProvider";
 
 export default function LoginForm({ redirect }: { redirect?: string }) {
   const router = useRouter();
+  const { t } = useT();
   const [email, setEmail] = useState("");
   const [marketing, setMarketing] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -33,9 +35,9 @@ export default function LoginForm({ redirect }: { redirect?: string }) {
         return;
       }
       const data = await res.json().catch(() => ({}));
-      setError(data.error || "Something went wrong. Please try again.");
+      setError(data.error || t("auth.err_generic", "Something went wrong. Please try again."));
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("auth.err_network", "Network error. Please try again."));
     }
     setBusy(false);
   }
@@ -49,9 +51,9 @@ export default function LoginForm({ redirect }: { redirect?: string }) {
       {/* Form, vertically centered in the space between logo and footer */}
       <main className="flex w-full flex-1 items-center justify-center">
         <div className="w-full max-w-[27.5rem]">
-          <h1 className="text-[1.75rem]">Sign in</h1>
+          <h1 className="text-[1.75rem]">{t("auth.sign_in", "Sign in")}</h1>
           <p className="mt-1 text-[0.95rem] text-[#6b6b6b]">
-            Sign in or create an account
+            {t("auth.sign_in_or_create", "Sign in or create an account")}
           </p>
 
           <form onSubmit={onSubmit} className="mt-7" noValidate>
@@ -71,11 +73,11 @@ export default function LoginForm({ redirect }: { redirect?: string }) {
                 htmlFor="email"
                 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[0.95rem] text-[#6b6b6b] transition-all peer-focus:top-[0.7rem] peer-focus:translate-y-0 peer-focus:text-[0.7rem] peer-[:not(:placeholder-shown)]:top-[0.7rem] peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:text-[0.7rem]"
               >
-                Email
+                {t("auth.email", "Email")}
               </label>
               <button
                 type="submit"
-                aria-label="Continue"
+                aria-label={t("auth.continue", "Continue")}
                 disabled={busy}
                 className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-[#1a1a1a] transition-colors hover:bg-[#f2f2f2] disabled:opacity-40"
               >
@@ -119,14 +121,14 @@ export default function LoginForm({ redirect }: { redirect?: string }) {
                 </svg>
               </span>
               <span className="text-[0.9rem] text-[#1a1a1a]">
-                Email me with news and offers
+                {t("auth.marketing", "Email me with news and offers")}
               </span>
             </label>
 
             <p className="mt-6 text-center text-[0.8rem] leading-relaxed text-[#6b6b6b]">
-              By continuing, you agree to our{" "}
+              {t("auth.terms_prefix", "By continuing, you agree to our")}{" "}
               <a href="#" className="underline decoration-[#c4c4c4] underline-offset-2 hover:text-[#1a1a1a]">
-                Terms of service
+                {t("auth.terms", "Terms of service")}
               </a>
             </p>
           </form>
@@ -138,7 +140,7 @@ export default function LoginForm({ redirect }: { redirect?: string }) {
           href="#"
           className="text-[0.85rem] text-[#6b6b6b] transition-colors hover:text-[#1a1a1a]"
         >
-          Privacy policy
+          {t("auth.privacy", "Privacy policy")}
         </a>
       </footer>
     </div>

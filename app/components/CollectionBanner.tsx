@@ -18,10 +18,30 @@ export default function CollectionBanner({
   slug: string;
   categories?: { label: string; handle: string }[];
 }) {
-  const { data } = useFetch<CollectionPage>(() => getCollectionPage(slug));
+  const { data } = useFetch<CollectionPage>(() => getCollectionPage(slug), `collection-page:${slug}`);
 
-  // Keep the vertical rhythm stable while loading.
-  if (!data) return <section className="pt-8 md:pt-10 pb-10 md:pb-14" />;
+  // Skeleton — mirrors the real banner layout (breadcrumb + centered heading +
+  // description + category-link row) so nothing jumps when data arrives.
+  if (!data)
+    return (
+      <section className="pt-8 md:pt-10 pb-10 md:pb-14 animate-pulse">
+        {/* Breadcrumb */}
+        <div className="px-6 md:px-12 lg:px-14 mb-10 md:mb-14">
+          <div className="h-3 w-40 rounded bg-espresso/[0.08]" />
+        </div>
+        {/* Centered heading + description + links */}
+        <div className="mx-auto max-w-[42.5rem] px-5 flex flex-col items-center">
+          <div className="h-8 w-2/3 rounded bg-espresso/[0.08] mb-6" />
+          <div className="h-3.5 w-full max-w-[34rem] rounded bg-espresso/[0.06] mb-2.5" />
+          <div className="h-3.5 w-4/5 max-w-[30rem] rounded bg-espresso/[0.06]" />
+          <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-3 w-24 rounded bg-espresso/[0.08]" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
 
   const last = data.breadcrumbs.length - 1;
   // Category tags are fully dynamic — ONLY the categories the admin assigned to

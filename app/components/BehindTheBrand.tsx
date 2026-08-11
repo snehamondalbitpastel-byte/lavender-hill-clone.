@@ -6,7 +6,7 @@ import { getBrand, type BrandContent } from "@/lib/api";
 
 // "Behind The Brand" media grid — now loaded from the database via /api/brand.
 export default function BehindTheBrand() {
-  const { data: brand } = useFetch<BrandContent>(getBrand);
+  const { data: brand } = useFetch<BrandContent>(getBrand, "brand");
 
   if (!brand) return <section className="py-16 md:py-24 bg-beige" />;
 

@@ -7,7 +7,7 @@ import { getCollections, type Collection } from "@/lib/api";
 
 // "Shop by category" — now loaded from the database via /api/collections.
 export default function ShopByCategory() {
-  const { data: collections } = useFetch<Collection[]>(getCollections);
+  const { data: collections } = useFetch<Collection[]>(getCollections, "collections");
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   const scrollByCard = (dir: number) => {

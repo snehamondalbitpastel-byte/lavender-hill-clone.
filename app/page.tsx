@@ -6,7 +6,6 @@ import ShopByCategory from "./components/ShopByCategory";
 import AsStyledByYou from "./components/AsStyledByYou";
 import BestSellers from "./components/BestSellers";
 import Testimonials from "./components/Testimonials";
-import FeaturedCollections from "./components/FeaturedCollections";
 import PressLogos from "./components/PressLogos";
 import BehindTheBrand from "./components/BehindTheBrand";
 import FooterFeatures from "./components/FooterFeatures";
@@ -22,9 +21,8 @@ export default function Home() {
         <Hero />
         <WhyLavenderHill />
         <ShopByCategory />
-        <BestSellers />
         <Testimonials />
-        <FeaturedCollections />
+        <BestSellers />
         <PressLogos />
         <BehindTheBrand />
         <AsStyledByYou />

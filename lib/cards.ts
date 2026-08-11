@@ -91,6 +91,7 @@ export async function regenerateCards(
   db: PrismaClient = defaultPrisma
 ): Promise<number> {
   const products = await db.product.findMany({
+    where: { hiddenFromShop: false }, // look-only / hidden products get no shop cards
     orderBy: [{ order: "asc" }, { id: "asc" }],
   });
 

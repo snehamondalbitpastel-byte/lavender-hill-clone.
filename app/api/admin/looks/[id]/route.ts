@@ -12,6 +12,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (b.look !== undefined) data.look = s(b.look);
   if (b.hotspotTop !== undefined) data.hotspotTop = s(b.hotspotTop) || "50%";
   if (b.hotspotLeft !== undefined) data.hotspotLeft = s(b.hotspotLeft) || "50%";
+  if (b.productSlug !== undefined) data.productSlug = s(b.productSlug);
   if (b.name !== undefined) data.name = s(b.name);
   if (b.price !== undefined) data.price = s(b.price);
   if (b.productImg !== undefined) data.productImg = s(b.productImg);

@@ -30,10 +30,10 @@ export function FulfillmentBadge({ status, label }: { status: string; label?: st
   return <span className={`${base} ${style}`}>{text}</span>;
 }
 
-export function PaymentBadge({ status }: { status: string }) {
-  const label = PAYMENT_LABELS[status as keyof typeof PAYMENT_LABELS] ?? status;
+export function PaymentBadge({ status, label }: { status: string; label?: string }) {
+  const text = label ?? PAYMENT_LABELS[status as keyof typeof PAYMENT_LABELS] ?? status;
   const style = PAYMENT_STYLE[status] ?? "bg-[#ece9e4] text-[#6b6257]";
-  return <span className={`${base} ${style}`}>{label}</span>;
+  return <span className={`${base} ${style}`}>{text}</span>;
 }
 
 const RETURN_STYLE: Record<string, string> = {

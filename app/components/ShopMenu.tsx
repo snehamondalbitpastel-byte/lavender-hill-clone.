@@ -8,7 +8,7 @@ import { getMenu, type MenuGroup } from "@/lib/api";
 // The panel is absolutely positioned against the (sticky) <header>, so it spans
 // full width just below the header, mirroring the live site's mega-menu.
 export default function ShopMenu() {
-  const { data: groups } = useFetch<MenuGroup[]>(getMenu);
+  const { data: groups } = useFetch<MenuGroup[]>(getMenu, "menu:all");
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 

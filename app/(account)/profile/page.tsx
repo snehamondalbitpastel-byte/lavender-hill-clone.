@@ -6,6 +6,8 @@ import LogoutButton from "../_components/LogoutButton";
 import ProfilePanels from "./ProfilePanels";
 import { prisma } from "@/lib/prisma";
 import { requireCustomer } from "@/lib/customer-auth";
+import { getLocale } from "@/lib/i18n";
+import { localizeMany } from "@/lib/i18n/translations";
 
 export const metadata: Metadata = {
   title: "Profile - Lavender Hill Clothing",
@@ -37,6 +39,14 @@ export default async function ProfilePage() {
     orderBy: [{ isDefault: "desc" }, { id: "asc" }],
   });
 
+  // Translate the server-rendered chrome (nav, sign-out heading, footer) for the
+  // visitor's language. The panels below translate themselves via useT.
+  const locale = await getLocale();
+  const UI = ["Orders", "Profile", "Sign out", "India", ...FOOTER_LINKS];
+  const tvals = await localizeMany(UI, locale);
+  const tmap = new Map(UI.map((s, i) => [s, tvals[i]]));
+  const t = (s: string) => tmap.get(s) ?? s;
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Top bar: logo left · account icon right (→ profile) */}
@@ -63,9 +73,9 @@ export default async function ProfilePage() {
               href="/orders"
               className="text-[1.15rem] text-[#8f7060] transition-colors hover:text-[#1a1a1a]"
             >
-              Orders
+              {t("Orders")}
             </Link>
-            <span className="text-[1.35rem] font-bold text-[#1a1a1a]">Profile</span>
+            <span className="text-[1.35rem] font-bold text-[#1a1a1a]">{t("Profile")}</span>
           </nav>
 
           <section className="w-full max-w-[42rem] flex-1">
@@ -78,7 +88,7 @@ export default async function ProfilePage() {
 
             {/* Sign out */}
             <section aria-label="Sign out" className="mt-10">
-              <h2 className="mb-3 text-[1.05rem] font-semibold text-[var(--acc-fg)]">Sign out</h2>
+              <h2 className="mb-3 text-[1.05rem] font-semibold text-[var(--acc-fg)]">{t("Sign out")}</h2>
               <LogoutButton className="rounded-md border border-[var(--acc-line)] px-5 py-2.5 text-[0.9rem] text-[var(--acc-fg)] transition-colors hover:bg-[#f6f6f6]" />
             </section>
           </section>
@@ -91,7 +101,7 @@ export default async function ProfilePage() {
           type="button"
           className="flex items-center gap-1.5 text-[0.85rem] text-[#8f7060] transition-colors hover:text-[#1a1a1a]"
         >
-          India
+          {t("India")}
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
             <path d="m1 3.5 4 4 4-4" stroke="currentColor" strokeLinecap="round" />
           </svg>
@@ -102,7 +112,7 @@ export default async function ProfilePage() {
             href="#"
             className="text-[0.85rem] text-[#8f7060] underline decoration-transparent underline-offset-2 transition-colors hover:decoration-current hover:text-[#1a1a1a]"
           >
-            {label}
+            {t(label)}
           </a>
         ))}
       </footer>

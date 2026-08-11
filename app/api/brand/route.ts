@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { getLocale } from "@/lib/i18n";
-import { localizeMany } from "@/lib/i18n/translations";
 
 // GET /api/brand — the single "Behind The Brand" content block (tiles parsed
-// from their JSON string). Title, description and tile titles are localized.
+// from their JSON string). Per the home-UI translation policy this section is
+// NOT localized — it stays in the authored (English) language for every locale.
 export async function GET() {
   const brand = await prisma.brandContent.findFirst();
 
@@ -17,14 +16,5 @@ export async function GET() {
     href: string | null;
   }[];
 
-  const locale = await getLocale();
-  const [title, description] = await localizeMany([brand.title, brand.description], locale);
-  const tileTitles = await localizeMany(tiles.map((t) => t.title), locale);
-
-  return Response.json({
-    ...brand,
-    title,
-    description,
-    tiles: tiles.map((t, i) => ({ ...t, title: tileTitles[i] })),
-  });
+  return Response.json({ ...brand, tiles });
 }

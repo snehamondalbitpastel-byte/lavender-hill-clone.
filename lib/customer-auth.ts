@@ -42,7 +42,8 @@ export type RequestResult =
 
 export async function requestCode(
   rawEmail: string,
-  marketing: boolean
+  marketing: boolean,
+  locale = "en"
 ): Promise<RequestResult> {
   const email = normalizeEmail(rawEmail);
   if (!validEmail(email)) return { ok: false, error: "invalid_email" };
@@ -76,7 +77,7 @@ export async function requestCode(
   // is already stored and the user can hit "Resend". The transport's timeouts
   // (see lib/email.ts) guarantee this can never hang the request forever.
   try {
-    await sendCode(email, code);
+    await sendCode(email, code, locale);
   } catch (err) {
     console.error(`[auth] Failed to send sign-in code to ${email}:`, err);
   }

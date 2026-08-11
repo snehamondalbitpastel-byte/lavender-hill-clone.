@@ -16,6 +16,8 @@ import SearchBox from "./SearchBox";
 import MenuPanel from "./MenuPanel";
 import { useCart } from "./CartProvider";
 import { useT } from "./LocaleProvider";
+import { useFetch } from "@/hooks/useFetch";
+import { getMenu, type MenuGroup } from "@/lib/api";
 
 const NAV = ["New In", "Shop", "Sale", "About"];
 // Nav label → dictionary key (so the menu translates with the site language).
@@ -62,24 +64,57 @@ export default function Header() {
   const closeShop = () => {
     shopTimer.current = setTimeout(() => setShopOpen(false), 120);
   };
+
+  // About hover mega-menu — same pattern. Its columns/links are admin-managed
+  // (location = "about"); clicking "About" opens the FIRST link's page.
+  const { data: aboutGroups } = useFetch<MenuGroup[]>(() => getMenu("about"), "menu:about");
+  const aboutLinks = (aboutGroups ?? []).flatMap((g) => g.links);
+  const aboutFirstHref = aboutLinks[0]?.href || "/about";
+  const hasAbout = aboutLinks.length > 0 || (aboutGroups ?? []).some((g) => g.image);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const aboutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openAbout = () => {
+    if (aboutTimer.current) clearTimeout(aboutTimer.current);
+    setAboutOpen(true);
+  };
+  const closeAbout = () => {
+    aboutTimer.current = setTimeout(() => setAboutOpen(false), 120);
+  };
   // A tab is "active" when the current URL is that page (or a sub-page of it).
   const isActive = (href: string) =>
     href !== "#" && (pathname === href || pathname.startsWith(href + "/"));
+  // Whether a nav item is the current page. About is special — it owns /about and
+  // every admin content page (/pages/…).
+  const isItemActive = (item: string) =>
+    item === "About"
+      ? pathname === "/about" || pathname.startsWith("/pages/")
+      : isActive(hrefFor(item));
 
-  // One underline bar slides under the active tab. We measure the active link's
-  // position from the DOM and animate the bar's left/width, so switching tabs
-  // glides instead of jumping. Re-measured on route change and on resize.
+  // Which item the sliding bar sits under. Priority: the HOVERED item > the item
+  // whose mega-menu is open (so the bar holds under Shop/About while the cursor
+  // moves down into its panel) > the current-page tab. So hovering any tab glides
+  // the bar onto it — like the live site — and it reverts on mouse-leave.
+  const [hoveredNav, setHoveredNav] = useState<string | null>(null);
+  const openItem = shopOpen ? "Shop" : aboutOpen && hasAbout ? "About" : null;
+  const activeItem = NAV.find(isItemActive) ?? null;
+  const barItem = hoveredNav ?? openItem ?? activeItem;
+
+  // One underline bar slides under `barItem`. We measure that link's position from
+  // the DOM and animate the bar's left/width, so it glides instead of jumping.
+  // Re-measured whenever the target changes (route, hover, open menu) and on resize.
   const navRef = useRef<HTMLElement>(null);
   const [bar, setBar] = useState<{ left: number; width: number } | null>(null);
   useIsoLayoutEffect(() => {
     const measure = () => {
-      const el = navRef.current?.querySelector<HTMLElement>("[data-active]");
+      const el = barItem
+        ? navRef.current?.querySelector<HTMLElement>(`[data-nav="${barItem}"]`)
+        : null;
       setBar(el ? { left: el.offsetLeft, width: el.offsetWidth } : null);
     };
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [pathname]);
+  }, [barItem]);
 
   return (
     <header className="sticky top-0 z-40 bg-cream/95 backdrop-blur-sm border-b border-line">
@@ -110,19 +145,30 @@ export default function Header() {
           {/* Center: nav — full-height links so the sliding chocolate bar sits
               flush on the header's bottom border. Client-side <Link> keeps the
               header mounted across pages, so the bar glides between tabs. */}
-          <nav ref={navRef} className="relative hidden h-full items-center gap-11 md:flex">
+          <nav
+            ref={navRef}
+            onMouseLeave={() => setHoveredNav(null)}
+            className="relative hidden h-full items-center gap-11 md:flex"
+          >
             {NAV.map((item) => {
-              const href = hrefFor(item);
-              const active = isActive(href);
               const isShop = item === "Shop";
+              const isAbout = item === "About";
+              // About links to its first page (admin-managed); active on any /pages/… too.
+              const href = isAbout ? aboutFirstHref : hrefFor(item);
+              const active = isItemActive(item);
               return (
                 <Link
                   key={item}
                   href={href}
+                  data-nav={item}
                   data-active={active || undefined}
                   aria-current={active ? "page" : undefined}
-                  onMouseEnter={isShop ? openShop : undefined}
-                  onMouseLeave={isShop ? closeShop : undefined}
+                  onMouseEnter={() => {
+                    setHoveredNav(item); // slide the bar onto the hovered tab
+                    if (isShop) openShop();
+                    else if (isAbout) openAbout();
+                  }}
+                  onMouseLeave={isShop ? closeShop : isAbout ? closeAbout : undefined}
                   className={`nav-link-lh flex h-full items-center text-[14.7px] tracking-[0.18em] leading-[1.7] transition-colors ${
                     active ? "text-espresso font-medium" : "text-espresso/70 hover:text-espresso"
                   }`}
@@ -174,12 +220,25 @@ export default function Header() {
       <div
         onMouseEnter={openShop}
         onMouseLeave={closeShop}
-        className={`absolute left-0 right-0 top-full z-30 hidden border-t border-line bg-cream shadow-soft-lg transition-all duration-200 ease-out md:block ${
+        className={`absolute left-0 right-0 top-full z-30 hidden border-y border-line bg-cream transition-all duration-200 ease-out md:block ${
           shopOpen ? "opacity-100 translate-y-0" : "pointer-events-none -translate-y-2 opacity-0"
         }`}
       >
-        <MenuPanel />
+        <MenuPanel location="shop" open={shopOpen} />
       </div>
+
+      {/* About hover mega-menu — same full-width panel, admin-managed columns/links */}
+      {hasAbout && (
+        <div
+          onMouseEnter={openAbout}
+          onMouseLeave={closeAbout}
+          className={`absolute left-0 right-0 top-full z-30 hidden border-y border-line bg-cream transition-all duration-200 ease-out md:block ${
+            aboutOpen ? "opacity-100 translate-y-0" : "pointer-events-none -translate-y-2 opacity-0"
+          }`}
+        >
+          <MenuPanel location="about" open={aboutOpen} />
+        </div>
+      )}
 
       {/* Mobile drawer */}
       {menuOpen && (
@@ -197,21 +256,33 @@ export default function Header() {
             </div>
             <nav className="flex flex-col gap-6">
               {NAV.map((item) => {
-                const href = hrefFor(item);
-                const active = isActive(href);
+                const isAbout = item === "About";
+                const href = isAbout ? aboutFirstHref : hrefFor(item);
+                const active = isItemActive(item);
                 return (
-                  <a
-                    key={item}
-                    href={href}
-                    aria-current={active ? "page" : undefined}
-                    className={`nav-link-lh text-sm transition-colors ${
-                      active
-                        ? "text-espresso font-medium underline decoration-espresso underline-offset-4"
-                        : "text-espresso/70"
-                    }`}
-                  >
-                    {t(NAV_KEY[item], item)}
-                  </a>
+                  <div key={item}>
+                    <a
+                      href={href}
+                      aria-current={active ? "page" : undefined}
+                      className={`nav-link-lh text-sm transition-colors ${
+                        active
+                          ? "text-espresso font-medium underline decoration-espresso underline-offset-4"
+                          : "text-espresso/70"
+                      }`}
+                    >
+                      {t(NAV_KEY[item], item)}
+                    </a>
+                    {/* About sub-links (admin-managed) listed under it on mobile */}
+                    {isAbout && aboutLinks.length > 0 && (
+                      <div className="mt-3 flex flex-col gap-3 border-l border-line pl-4">
+                        {aboutLinks.map((link) => (
+                          <a key={link.id} href={link.href} className="text-[13px] text-espresso/60 hover:text-espresso transition-colors">
+                            {link.label}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </nav>
