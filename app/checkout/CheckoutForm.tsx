@@ -135,6 +135,10 @@ export default function CheckoutForm({
   const [appliedCode, setAppliedCode] = useState(""); // the valid code currently applied
   const [codeError, setCodeError] = useState("");
   const [codeBusy, setCodeBusy] = useState(false);
+  // A coupon auto-removed because the cart dropped below its minimum. We remember
+  // it so it AUTO-RE-APPLIES the instant the cart qualifies again (add/increase an
+  // item) — live, no refresh — like a real store. Cleared on manual remove/apply.
+  const [removedCode, setRemovedCode] = useState("");
   const [promos, setPromos] = useState<{ code: string; message: string; min: number }[]>([]); // admin-featured offers (with unlock minimum)
   const [promoTmap, setPromoTmap] = useState<Record<string, string>>({}); // localized promo-message cache
   // True while a coupon saved from a previous visit is being re-applied after a
@@ -168,6 +172,7 @@ export default function CheckoutForm({
         // The applied coupon no longer qualifies (e.g. the cart dropped below its
         // minimum) → drop it gracefully with a message; checkout continues at full price.
         if (d.couponError && appliedCode) {
+          setRemovedCode(appliedCode); // remember → auto-re-apply when the cart qualifies again
           setAppliedCode("");
           setCodeInput("");
           setCodeError(`Coupon removed — ${d.couponError}`);
@@ -235,6 +240,18 @@ export default function CheckoutForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart.hydrated, cart.items.length]);
 
+  // Auto-RE-APPLY a coupon that was removed for being below its minimum, the
+  // moment the cart qualifies again (the shopper adds/increases an item). Runs on
+  // subtotal change; applyCode validates server-side, so it only sticks when the
+  // cart truly qualifies — otherwise it stays removed (no error spam). Also covers
+  // the after-refresh case: a saved code that couldn't restore parks in
+  // `removedCode` and re-applies once eligible.
+  useEffect(() => {
+    if (!removedCode || appliedCode || restoringCode || codeBusy || cart.items.length === 0) return;
+    applyCode(removedCode, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart.subtotal, cart.items.length, removedCode, appliedCode, restoringCode]);
+
   // Validate + apply a coupon (live preview). Only a valid code sets appliedCode,
   // which re-creates the payment intent at the discounted total. `silent` (used by
   // the refresh-restore above) suppresses the error message on a stale code.
@@ -253,10 +270,16 @@ export default function CheckoutForm({
       if (res.ok && data.ok) {
         setAppliedCode(data.code);
         setCodeInput(data.code);
+        setRemovedCode(""); // applied → nothing pending to re-apply
+        setCodeError(""); // clear any "coupon removed" note now that it's back on
       } else {
         setAppliedCode("");
-        if (silent) { try { localStorage.removeItem(CODE_KEY); } catch { /* ignore */ } }
-        else setCodeError(data.error || "This code can't be applied.");
+        if (silent) {
+          // A saved/parked code that still doesn't qualify → keep it parked so it
+          // auto-applies later when the cart grows enough (don't nag the shopper).
+          setRemovedCode(code);
+          try { localStorage.removeItem(CODE_KEY); } catch { /* ignore */ }
+        } else setCodeError(data.error || "This code can't be applied.");
       }
     } catch {
       if (!silent) setCodeError("Couldn't apply the code. Please try again.");
@@ -268,6 +291,7 @@ export default function CheckoutForm({
     setAppliedCode("");
     setCodeInput("");
     setCodeError("");
+    setRemovedCode(""); // manual remove → don't auto-re-apply it
   }
 
   const set = <K extends keyof Delivery>(k: K, v: Delivery[K]) =>
