@@ -92,6 +92,32 @@ export function bundleFor(item: CartItem): number {
   return Math.round(((item.price * item.qty * b.pct) / 100) * 100) / 100;
 }
 
+// Collapse any lines that refer to the SAME variant (same product + colour +
+// size) into ONE, summing their quantities (capped). This heals legacy carts that
+// stored the same variant under two different line keys — e.g. before the stable
+// colour-key change — which showed a product twice and made the qty look wrong.
+// Each surviving line is re-keyed to the current scheme so future adds merge too.
+function dedupeItems(items: CartItem[]): CartItem[] {
+  const out: CartItem[] = [];
+  const at = new Map<string, number>();
+  for (const raw of items) {
+    if (!raw || typeof raw.productId !== "number") continue;
+    // Merge identity uses the DISPLAY colour + size so old (no colourKey) and new
+    // (with colourKey) lines for the same variant collapse together.
+    const id = `${raw.productId}|${raw.colour}|${raw.size}`;
+    const cid = (raw.colourKey && raw.colourKey.trim()) || raw.colour;
+    const key = `${raw.productId}|${cid}|${raw.size}`;
+    const i = at.get(id);
+    if (i != null) {
+      out[i] = { ...out[i], qty: Math.min(out[i].qty + (raw.qty || 1), maxQtyFor(out[i].stock)) };
+    } else {
+      at.set(id, out.length);
+      out.push({ ...raw, key, qty: Math.max(1, Math.min(raw.qty || 1, maxQtyFor(raw.stock))) });
+    }
+  }
+  return out;
+}
+
 const STORAGE_KEY = "lh_cart_v1";
 // A login-gated add parks here while the guest signs in, then replays on return.
 const PENDING_KEY = "lh_pending_add";
@@ -110,7 +136,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed.items)) setItems(parsed.items);
+        if (Array.isArray(parsed.items)) setItems(dedupeItems(parsed.items));
         if (typeof parsed.note === "string") setNote(parsed.note);
       }
     } catch {
